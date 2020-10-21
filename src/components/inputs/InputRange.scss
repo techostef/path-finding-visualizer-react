@@ -1,0 +1,23 @@
+.range-array {
+    margin-left: 20px;
+    color: white;
+    .input-container {
+        display: flex;
+        margin-right: 10px;
+        .input-text {
+            color: black;
+            margin-left: 8px;
+            width: 70px;
+            padding: 5px 10px;
+            border: unset;
+            border-radius: 4px;
+            -webkit-box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.75);
+            box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.75);
+
+            &:focus {
+                outline: none;
+            }
+        }
+    }
+}

@@ -1,0 +1,34 @@
+.board-component-container {
+    display: grid;
+    margin: auto;
+    width: 100%;
+    height: 100%;
+    .board-item {
+        font-size: 9px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(53, 52, 52, 0.747);
+        
+        &.active {
+            background-color: aquamarine;
+        }
+        &.activeHead {
+            background-color: rgba(196, 24, 24, 0.733);
+        }
+        &.wall {
+            background-color: rgb(2, 56, 38);
+        }
+        &.foodActive {
+            background-color: yellowgreen;
+        }
+        .container-icon {
+            position: relative;
+            svg {
+                position: absolute;
+                width: 50%;
+                margin-top: 10%;
+                right: 26%;
+            }
+        }
+    }
+}
