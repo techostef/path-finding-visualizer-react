@@ -1,5 +1,5 @@
 import { batch } from "react-redux"
-import { dPattern, generateFoodPosition } from "../../../helpers/gameSnakeHelpers"
+import { last } from "../../../helpers/dataHelpers"
 import * as gameStateAction from "../gameStateAction"
 
 export const restartGame = () => {
@@ -8,10 +8,8 @@ export const restartGame = () => {
         const { gameState } = state
         if (!gameState.startGame) {
             batch(() => {
-                const generatedFoodPosition = generateFoodPosition([dPattern, ...gameState.wallPosition], gameState.boardSize)
-                const snakePosition = [dPattern]
-                dispatch(gameStateAction.setFoodPosition(generatedFoodPosition))
-                dispatch(gameStateAction.setSnakePosition(snakePosition))
+                dispatch(gameStateAction.setSnakePosition([last(gameState.snakePosition)]))
+                dispatch(gameStateAction.setAreaSearch([]))
             })
         }
     }

@@ -1,5 +1,6 @@
 import { arrayToString, range } from "./dataHelpers"
 import gameEnums from "../enums/gameEnums"
+import GameEnums from "../enums/gameEnums"
 
 export const dPattern = {x: 0, y: 0}
 const dFunc = () => {}
@@ -228,6 +229,8 @@ export const getMoveExcept = (visitedPosition = [], headSnake = dPattern, boardS
     let headSnakeTemp = {x: headSnakeX, y: headSnakeY}
     let except = false
     let index 
+    if (headSnakeX >= boardSize && headSnakeY >= boardSize)
+        return null
     for(let i = 0; i < 4; i++) {
         if (i === 0)
             headSnakeTemp = {x: headSnakeX + 1, y: headSnakeY}
@@ -358,4 +361,35 @@ export const moveNext = (headPosition, foodPosition, obstaclePosition, boardSize
             return nextMove
         }
     }
+}
+
+
+export const dfsStepNode = (visited, currentPosition, foodPositionTemp, wallPosition, nodePosition, boardSize, prevStep = dFunc, setVisited = dFunc) => {
+    let obstacle
+    let nextStep
+    let visitedTemp = visited
+    let [ headNode ] = nodePosition
+    if (!visitedTemp[currentPosition]) {
+        visitedTemp[currentPosition] = []
+        setVisited(visitedTemp)
+        obstacle = [...wallPosition, ...nodePosition.map((item) => Object.assign({}, item))]
+        nextStep = moveNext(headNode, foodPositionTemp, obstacle, boardSize)
+    } else {
+        if (visitedTemp[currentPosition].length >= 4) {
+            prevStep()
+            return GameEnums.CONTINUE
+        }
+        nextStep = getMoveExcept(visitedTemp[currentPosition], Object.assign({}, headNode), boardSize)
+        obstacle = [...wallPosition, ...visitedTemp[currentPosition], ...nodePosition.map((item) => Object.assign({}, item))]
+        if (nextStep && indexOfPattern(Object.assign({}, nextStep), obstacle) >= 0) {
+            visitedTemp[currentPosition].push(Object.assign({}, nextStep))
+            setVisited(visitedTemp)
+            return GameEnums.CONTINUE
+        }
+        if (!nextStep) {
+            prevStep()
+            return GameEnums.CONTINUE
+        }
+    }
+    return nextStep
 }

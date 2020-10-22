@@ -9,6 +9,10 @@
         flex-direction: column;
         border: 1px solid rgba(53, 52, 52, 0.747);
         
+        
+        &.areaSearch {
+            background-color: aqua;
+        }
         &.active {
             background-color: aquamarine;
         }
@@ -21,6 +25,7 @@
         &.foodActive {
             background-color: yellowgreen;
         }
+        
         .container-icon {
             position: relative;
             svg {

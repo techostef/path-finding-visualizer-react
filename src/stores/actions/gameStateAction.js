@@ -2,6 +2,10 @@ import actionEnums from "../../enums/actionEnums"
 import { dPattern } from "../../helpers/gameSnakeHelpers"
 
 
+export const setAreaSearch = (areaSearch = []) => ({
+    type: actionEnums.GAME_STATE_SET_AREA_SEARCH, areaSearch
+})
+
 export const setBoarSize = (boardSize = 10) => ({
     type: actionEnums.GAME_STATE_SET_BOARD_SIZE, boardSize
 })

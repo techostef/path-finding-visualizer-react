@@ -5,24 +5,20 @@ const init = {
     boardSize: 15,
     // foodPosition: Object.assign({}, dPattern, {x: 4, y: 4}),
     visualizeFinding: false,
-    foodPosition: {
-      "x": 3,
-      "y": 3
-    },
+    foodPosition: {"x":5,"y":5},
     // snakePosition: [dPattern],
     snakePosition: [
-      {
-        "x": 6,
-        "y": 3
-      }
+        {"x":2,"y":2}
     ],
-    wallPosition: [
-      
+    areaSearch: [
     ],
+    wallPosition: [],
 }
 
 const appState = (state = init, action) => {
     switch (action.type) {
+        case actionEnums.GAME_STATE_SET_AREA_SEARCH:
+            return Object.assign({}, state, { areaSearch: action.areaSearch})
         case actionEnums.GAME_STATE_SET_BOARD_SIZE:
             return Object.assign({}, state, { boardSize: action.boardSize})
         case actionEnums.GAME_STATE_SET_FOOD_POSITION:

@@ -7,6 +7,7 @@ import * as gameStateAction from "../stores/actions/gameStateAction"
 import { connect } from "react-redux"
 import { bindActionCreators } from "redux"
 import InputRange from "../components/inputs/InputRange"
+import { dPattern } from "../helpers/gameSnakeHelpers"
 
 const mapStateToProps = (state) => {
     return {
@@ -41,6 +42,8 @@ const BoardHeader = (props) => {
         const { gameStateAction } = props
         const boardSize = parseInt(e.target.value)
         gameStateAction.setBoarSize(boardSize < 4 ? 4 : boardSize)
+        gameStateAction.setSnakePosition([dPattern])
+
     }
 
     const clearWallPosition = (e) => {
