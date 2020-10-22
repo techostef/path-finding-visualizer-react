@@ -1,4 +1,5 @@
-This project about snake will find path to food using dfs algorithm
+This project about path finding visualizer for finding target with obstacle <br/>
+link demo https://techostef.github.io/path-finding-visualizer-react/
 
 ## Available Scripts
 
