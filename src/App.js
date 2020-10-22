@@ -6,7 +6,7 @@ import BoardHeader from './game/BoardHeader';
 
 function App() {
 
-  const timerInterval = 200
+  const timerInterval = 50
 
   return (
     <div className="App">

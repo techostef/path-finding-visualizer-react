@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { last, range } from "../helpers/dataHelpers"
-import { checkEatTarget, generateGrid, dPattern, gapPattern, generateFoodPosition, getMoveExcept, patternToString, indexOfPattern, isEqualPattern, checkOutsideBoardSize, dfsStepNode } from "../helpers/gameSnakeHelpers"
+import { checkEatTarget, generateGrid, dPattern, gapPattern, generateFoodPosition, getMoveExcept, patternToString, indexOfPattern, isEqualPattern, checkOutsideBoardSize, dfsStepNode, optimationStep } from "../helpers/gameSnakeHelpers"
 import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import * as appStateAction from "../stores/actions/appStateAction"
 import * as gameBusinessAction from "../stores/actions/business/gameBusinessAction"
@@ -16,6 +16,7 @@ const mapStateToProps = (state) => {
         areaSearch: state.gameState.areaSearch,
         boardSize: state.gameState.boardSize,
         foodPosition: state.gameState.foodPosition,
+        optimizePath: state.gameState.optimizePath,
         snakePosition: state.gameState.snakePosition,
         startGame: state.appState.startGame,
         wallPosition: state.gameState.wallPosition,
@@ -264,6 +265,11 @@ const BoardComponent = (props) => {
             snakePositionTemp = [Object.assign({}, nextStep), ...snakePositionTemp]
             
             if (checkEatTarget(snakePositionTemp, foodPositionTemp)) {
+                if (props.optimizePath) {
+                    const optimation = optimationStep([...step], wallPosition)
+                    step = optimation
+                    allStep.push(optimation)
+                }
                 eatFood = true
                 continue
             }
@@ -382,12 +388,12 @@ const BoardComponent = (props) => {
                         >
                             {isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon/></div>}
                             {/* {isEqualPattern(snakePosition[snakePosition.length - 1], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon/></div>} */}
-                            {/* <div>
+                            <div>
                                 x: {indexX}
                             </div>
                             <div>
                                 y: {indexY}
-                            </div> */}
+                            </div>
                         </div>
                     )
                 })

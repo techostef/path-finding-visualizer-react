@@ -12,6 +12,7 @@ import { dPattern } from "../helpers/gameSnakeHelpers"
 const mapStateToProps = (state) => {
     return {
         boardSize: state.gameState.boardSize,
+        optimizePath: state.gameState.optimizePath,
         startGame: state.appState.startGame,
         visualizeFinding: state.gameState.visualizeFinding,
     }
@@ -56,6 +57,11 @@ const BoardHeader = (props) => {
         gameStateAction.setVisualizeFinding(!props.visualizeFinding)
     }
 
+    const handleOptimizePath = (e) => {
+        const { gameStateAction } = props
+        gameStateAction.setOptimizePath(!props.optimizePath)
+    }
+
     return (
         <div className="board-header">
             <div className="board-size-control">
@@ -74,7 +80,13 @@ const BoardHeader = (props) => {
                 <div className="text-content">
                     Visualize Finding
                 </div>
-                <input type="checkbox" disabled={props.startGame} defaultChecked={props.visualizeFinding.chkbox} onChange={handleVisualizeFinding} />
+                <input type="checkbox" disabled={props.startGame} defaultChecked={props.visualizeFinding} onChange={handleVisualizeFinding} />
+            </div>
+            <div className="board-size-control">
+                <div className="text-content">
+                    Optimize Path
+                </div>
+                <input type="checkbox" disabled={props.startGame} defaultChecked={props.optimizePath} onChange={handleOptimizePath} />
             </div>
             <Button 
                 className="start-button" 

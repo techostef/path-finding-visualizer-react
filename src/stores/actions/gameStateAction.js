@@ -14,6 +14,10 @@ export const setFoodPosition = (foodPosition = dPattern) => ({
     type: actionEnums.GAME_STATE_SET_FOOD_POSITION, foodPosition
 })
 
+export const setOptimizePath = (optimizePath = []) => ({
+    type: actionEnums.GAME_STATE_SET_OPTIMIZE_PATH, optimizePath
+})
+
 export const setSnakePosition = (snakePosition = []) => ({
     type: actionEnums.GAME_STATE_SET_SNAKE_POSITION, snakePosition
 })

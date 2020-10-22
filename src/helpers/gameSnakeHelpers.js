@@ -28,6 +28,13 @@ export const gapPattern = (position1 = dPattern, position2 = dPattern) => {
     }
 }
 
+export const plusPattern = (position1 = dPattern, position2 = dPattern) => {
+    return {
+        x: position2.x + position1.x,
+        y: position2.y + position1.y,
+    }
+}
+
 export const patternToString = (pattern = dPattern) => {
     return `x${pattern.x}y${pattern.y}`
 }
@@ -69,6 +76,18 @@ export const isEqualPattern = (pattern1 = dPattern, pattern2 = dPattern) => {
 
 export const indexOfPattern = (patternSearch = dPattern, allPattern = []) => {
     return allPattern.findIndex((item) => isEqualPattern(item, patternSearch))
+}
+
+export const isEqualPatternList = (allPattern = [], allPattern1 = []) => {
+    if (allPattern.length !== allPattern1.length) return false
+    let checkEqual = true
+    for(let i = 0; i < allPattern.length; i ++) {
+        if (!isEqualPattern(allPattern[i], allPattern1[i])) {
+            checkEqual = false
+            break
+        }
+    }
+    return checkEqual
 }
 
 export const followingHeader = (headerPosition = dPattern, snakePosition = [], boardSize, setSnakePosition = dFunc) => {
@@ -324,8 +343,6 @@ export const moveNext = (headPosition, foodPosition, obstaclePosition, boardSize
     else if (headPosition.x === foodPosition.x) {
         
         nextMove = moveYNextDefault()
-        if (isEqualPattern({x: 12, y: 10}, headPosition))
-        console.log("nextMove", headPosition, nextMove)
         if (checkOutsideBoardSize(Object.assign({}, nextMove), boardSize)) return moveXNext()
         else if (obstaclePosition.length > 1 && indexOfPattern(nextMove, obstaclePosition) >= 0) return moveXNext()
         nextMove = moveYNext()
@@ -392,4 +409,133 @@ export const dfsStepNode = (visited, currentPosition, foodPositionTemp, wallPosi
         }
     }
     return nextStep
+}
+
+export const cutStep = (step = [], pointStart = dPattern, pointEnd = dPattern, obstacle = []) => {
+    const move = gapPattern(pointStart, pointEnd)
+    let gapStep = 0
+    if (move.x !== 0) {
+        gapStep = Math.abs(move.x)
+        move.x = move.x > 0 ? 1 : -1
+    }
+    else {
+        gapStep = Math.abs(move.y)
+        move.y = move.y > 0 ? 1 : -1
+    }
+    let stepTemp = [...step]
+    let indexStart = stepTemp.findIndex((item) => isEqualPattern(item, pointStart))
+    let indexEnd = stepTemp.findIndex((item) => isEqualPattern(item, pointEnd))
+
+    if (indexStart === -1 || indexEnd === -1) return step
+
+    stepTemp.splice(indexStart + 1, indexEnd - indexStart )
+    let checkHitObstacle = false
+    for(let i = indexStart + 1; i <= indexStart + gapStep; i ++) {
+        let nextMoving = null 
+        if (move.x !== 0) {
+            nextMoving = Object.assign({}, pointStart, {x: pointStart.x + move.x})
+            move.x += move.x > 0 ? 1 : -1
+        } else {
+            nextMoving = Object.assign({}, pointStart, {y: pointStart.y + move.y})
+            move.y += move.y > 0 ? 1 : -1
+        }
+        if (indexOfPattern(nextMoving, obstacle) !== -1) {
+            checkHitObstacle = true
+            break
+        }
+        stepTemp.splice(i, 0, nextMoving)
+    }
+    
+    return checkHitObstacle ? step : stepTemp
+}
+
+const getSortCut = (step = [], obstacle = []) => {
+    let historyX = []
+    let historyY = []
+    let index
+    for(let i = 0; i < step.length; i ++) {
+        const stepCurrent = step[i]
+        if (step[i + 1] && stepCurrent.x === step[i + 1].x) continue
+        index = i
+        if (!historyX[stepCurrent.x]) {
+            historyX[stepCurrent.x] = {
+                start: index,
+                end: index,
+                startPoint: Object.assign({}, step[i]),
+                endPoint: Object.assign({}, step[i]),
+            }
+            index ++
+            while(index < step.length) {
+                if (step[index].x === stepCurrent.x) {
+                    historyX[stepCurrent.x].end = index
+                    historyX[stepCurrent.x].endPoint = Object.assign({}, step[index])
+                    index = step.length
+                }
+                index ++
+            }
+        }
+    }
+
+    for(let i = 0; i < step.length; i ++) {
+        const stepCurrent = step[i]
+        if (step[i + 1] && stepCurrent.y === step[i + 1].y) continue
+        index = i
+        if (!historyY[stepCurrent.y]) {
+            historyY[stepCurrent.y] = {
+                start: index,
+                end: index,
+                startPoint: Object.assign({}, step[i]),
+                endPoint: Object.assign({}, step[i]),
+            }
+            index ++
+            while(index < step.length) {
+                if (step[index].y === stepCurrent.y) {
+                    historyY[stepCurrent.y].end = index
+                    historyY[stepCurrent.y].endPoint = Object.assign({}, step[index])
+                    index = step.length
+                }
+                index ++
+            }
+        }
+    }
+
+    historyX = historyX.filter((item) => item.start !== item.end)
+    historyY = historyY.filter((item) => item.start !== item.end)
+    return [...historyX, ...historyY]
+}
+
+export const optimationStep = (step = [], obstacle = [], deepLevel = 0) => {
+    let sortCuts = getSortCut(step, obstacle)
+    if (sortCuts.length === 0) return step
+    let result = []
+    sortCuts.forEach((item, index) => {
+        let hasil = cutStep(step, item.startPoint, item.endPoint, obstacle)
+        
+        if (hasil.length !== step.length) {
+            result.push(hasil)
+        }
+    })
+    let lastResult = null
+
+    if (result.length === 0) return step
+
+    result.forEach((item) => {
+        if (!lastResult) {
+            lastResult = item
+        } else if (lastResult && lastResult.length > item.length) {
+            lastResult = item
+        }
+    })
+    let checkSamePath = 0
+    // result.forEach((item, index) => {
+    //     const resultTemp = isEqualPatternList(item, lastResult)
+    //     if (resultTemp) {
+    //         console.log("check", resultTemp, index, [...item], deepLevel)
+    //         checkSamePath ++
+    //     }
+    // })
+
+    console.log("deepLevel", deepLevel, checkSamePath, result.length)
+
+    return optimationStep([...lastResult], obstacle, deepLevel + 1)
 }

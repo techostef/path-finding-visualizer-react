@@ -7,7 +7,11 @@
     background-color: #dcd5d5;
     .board-size-control {
         align-items: center;
+        margin-left: 5px;
         display: flex;
+        input {
+            margin-left: 5px;
+        }
     }
     .start-button {
         margin-left: auto;
