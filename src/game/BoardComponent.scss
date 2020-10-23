@@ -23,16 +23,21 @@
             height: inherit;
             background-color: rgb(2, 56, 38);
             border-color: rgb(2, 56, 38);
-            animation-name: bumping;
-            animation-duration: 0.5s;
+            animation-name: wallAnimation;
+            animation-duration: 0.3s;
+            animation-timing-function: ease-out;
+            animation-direction: alternate;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+            animation-play-state: running;
         }
 
         &.foodActive {
             background-color: yellowgreen;
         }
         &.active {
-            background-color: aquamarine;
-            border-color: aquamarine;
+            background-color: rgb(83, 74, 207);
+            border-color: rgb(83, 74, 207);
             animation-name: bumping-snake;
             animation-duration: 0.5s;
         }
@@ -50,26 +55,50 @@
         }
     }
 
-
-    @keyframes bumping {
-        0%   {width: 60%; height: 60%; margin: auto;}
-        25%  {width: 70%; height: 70%; margin: auto;}
-        50%  {width: 80%; height: 80%; margin: auto;}
-        100% {width: 100%; height: 100%; margin: auto;}
+    @keyframes wallAnimation {
+        0% {
+          transform: scale(.3);
+        }
+      
+        50% {
+          transform: scale(1.2);
+        }
+      
+        100% {
+          transform: scale(1.0);
+        }
     }
 
     @keyframes bumping-areaSearch {
-        0%   {width: 60%; height: 60%; margin: auto; background-color: rgb(230, 158, 116);}
-        25%  {width: 70%; height: 70%; margin: auto;}
-        50%  {width: 80%; height: 80%; margin: auto;}
-        100% {width: 100%; height: 100%; margin: auto; background-color: aqua;}
+        0% {
+            transform: scale(.3);
+            background-color: rgb(230, 158, 116);
+        }
+        
+        100% {
+            transform: scale(1.0);
+            background-color: rgb(168, 235, 212);
+        }
+        // 0%   {width: 60%; height: 60%; margin: auto; background-color: rgb(230, 158, 116);}
+        // 25%  {width: 70%; height: 70%; margin: auto;}
+        // 50%  {width: 80%; height: 80%; margin: auto;}
+        // 100% {width: 100%; height: 100%; margin: auto; background-color: aqua;}
     }
 
 
     @keyframes bumping-snake {
-        0%   {width: 60%; height: 60%; margin: auto; background-color: rgb(168, 235, 212);}
-        25%  {width: 70%; height: 70%; margin: auto;}
-        50%  {width: 80%; height: 80%; margin: auto;}
-        100% {width: 100%; height: 100%; margin: auto; background-color: aquamarine;}
+        0% {
+            transform: scale(.3);
+            background-color: rgb(168, 235, 212)
+        }
+        
+        100% {
+            transform: scale(1.0);
+            background-color: rgb(83, 74, 207);
+        }
+        // 0%   {width: 60%; height: 60%; margin: auto; background-color: rgb(168, 235, 212);}
+        // 25%  {width: 70%; height: 70%; margin: auto;}
+        // 50%  {width: 80%; height: 80%; margin: auto;}
+        // 100% {width: 100%; height: 100%; margin: auto; background-color: aquamarine;}
     }
 }

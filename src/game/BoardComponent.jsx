@@ -5,7 +5,7 @@ import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import * as appStateAction from "../stores/actions/appStateAction"
 import * as gameBusinessAction from "../stores/actions/business/gameBusinessAction"
 import * as gameStateAction from "../stores/actions/gameStateAction"
-import { connect } from "react-redux"
+import { batch, connect } from "react-redux"
 import { bindActionCreators } from "redux"
 import "./BoardComponent.scss"
 import GameEnums from "../enums/gameEnums"
@@ -319,9 +319,11 @@ const BoardComponent = (props) => {
             setMouseDownType(GameEnums.SET_WALL)
         }
         if (!value) {
-            gameStateAction.setFoodPosition(foodPosition)
-            gameStateAction.setSnakePosition(snakePosition)
-            gameStateAction.setWallPosition(wallPosition)
+            batch(() => {
+                gameStateAction.setFoodPosition(foodPosition)
+                gameStateAction.setSnakePosition(snakePosition)
+                gameStateAction.setWallPosition(wallPosition)
+            })
         }
 
         if (value === 'check') {

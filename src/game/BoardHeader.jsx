@@ -97,7 +97,7 @@ const BoardHeader = (props) => {
                 className="restart-button" 
                 onClick={restartGame}
             >
-                Restart Game
+                Clear Board
             </Button>
         </div>
     )
