@@ -54,39 +54,30 @@ const BoardHeader = (props) => {
 
     const handleVisualizeFinding = (e) => {
         const { gameStateAction } = props
-        gameStateAction.setVisualizeFinding(!props.visualizeFinding)
+        gameStateAction.setVisualizeFinding(true)
+        gameStateAction.setOptimizePath(false)
     }
 
     const handleOptimizePath = (e) => {
         const { gameStateAction } = props
-        gameStateAction.setOptimizePath(!props.optimizePath)
+        gameStateAction.setVisualizeFinding(false)
+        gameStateAction.setOptimizePath(true)
     }
 
     return (
         <div className="board-header">
-            <div className="board-size-control">
-                <div className="text-content">
-                    Board Size
-                </div>
-                <InputRange 
-                    disabled={props.startGame}
-                    value={props.boardSize} 
-                    min={3}
-                    max={100}
-                    onChange={onChangeBoardSize} 
-                />
-            </div>
+            
             <div className="board-size-control">
                 <div className="text-content">
                     Visualize Finding
                 </div>
-                <input type="checkbox" disabled={props.startGame} defaultChecked={props.visualizeFinding} onChange={handleVisualizeFinding} />
+                <input type="radio" name="wayinput" disabled={props.startGame} defaultChecked={props.visualizeFinding} onChange={handleVisualizeFinding} />
             </div>
             <div className="board-size-control">
                 <div className="text-content">
                     Optimize Path
                 </div>
-                <input type="checkbox" disabled={props.startGame} defaultChecked={props.optimizePath} onChange={handleOptimizePath} />
+                <input type="radio" name="wayinput" disabled={props.startGame} defaultChecked={props.optimizePath} onChange={handleOptimizePath} />
             </div>
             <Button 
                 className="start-button" 

@@ -411,6 +411,47 @@ export const dfsStepNode = (visited, currentPosition, foodPositionTemp, wallPosi
     return nextStep
 }
 
+export const cleanPattern = (patternList = []) => {
+    let patternListTemp = [...patternList]
+    patternList.forEach((item, index) => {
+        if (patternList[index + 1]) {
+            let gapMove = gapPattern(patternList[index], patternList[index + 1])
+            if (gapMove.x > 1 || gapMove.y > 1 || gapMove.x < -1 || gapMove.y < -1) {
+                let indexDuplicate = patternListTemp.findIndex((itemSearch) => isEqualPattern(itemSearch, item))
+                if (indexDuplicate !== - 1) {
+                    patternListTemp.splice(indexDuplicate, 1)
+                }
+            }
+        }
+    }) 
+    return patternListTemp
+}
+
+export const removeDuplicatePattern = (patternList = []) => {
+    let patternListTemp = [...patternList]
+    patternList.forEach((item, index) => {
+        let countDuplicate = 0
+        let lastIndexDuplicate = -1
+        let indexDuplicate = patternListTemp.findIndex((itemSearch, indexSearch) => {
+            if (isEqualPattern(item, itemSearch)) {
+                countDuplicate += 1
+                if (countDuplicate > 1) {
+                    if (index === 0) {
+                        lastIndexDuplicate = indexSearch
+                    }
+                    return true
+                }
+            }
+            return false
+        })
+        if (lastIndexDuplicate !== -1) {
+            patternListTemp.splice(lastIndexDuplicate, 1)
+        }
+        else if (indexDuplicate !== - 1) patternListTemp.splice(indexDuplicate, 1)
+    })
+    return cleanPattern(patternListTemp)
+}
+
 export const cutStep = (step = [], pointStart = dPattern, pointEnd = dPattern, obstacle = []) => {
     const move = gapPattern(pointStart, pointEnd)
     let gapStep = 0
@@ -425,7 +466,6 @@ export const cutStep = (step = [], pointStart = dPattern, pointEnd = dPattern, o
     let stepTemp = [...step]
     let indexStart = stepTemp.findIndex((item) => isEqualPattern(item, pointStart))
     let indexEnd = stepTemp.findIndex((item) => isEqualPattern(item, pointEnd))
-
     if (indexStart === -1 || indexEnd === -1) return step
 
     stepTemp.splice(indexStart + 1, indexEnd - indexStart )
@@ -446,19 +486,23 @@ export const cutStep = (step = [], pointStart = dPattern, pointEnd = dPattern, o
         stepTemp.splice(i, 0, nextMoving)
     }
     
-    return checkHitObstacle ? step : stepTemp
+    return checkHitObstacle ? step : (stepTemp)
 }
 
 const getSortCut = (step = [], obstacle = []) => {
     let historyX = []
     let historyY = []
+    let allHistory = []
     let index
+    let key
     for(let i = 0; i < step.length; i ++) {
         const stepCurrent = step[i]
         if (step[i + 1] && stepCurrent.x === step[i + 1].x) continue
         index = i
-        if (!historyX[stepCurrent.x]) {
-            historyX[stepCurrent.x] = {
+        key = stepCurrent.x + 'a' + stepCurrent.y
+        if (!historyX[key]) {
+            
+            historyX[key] = {
                 start: index,
                 end: index,
                 startPoint: Object.assign({}, step[i]),
@@ -467,12 +511,14 @@ const getSortCut = (step = [], obstacle = []) => {
             index ++
             while(index < step.length) {
                 if (step[index].x === stepCurrent.x) {
-                    historyX[stepCurrent.x].end = index
-                    historyX[stepCurrent.x].endPoint = Object.assign({}, step[index])
+                    historyX[key].end = index
+                    historyX[key].endPoint = Object.assign({}, step[index])
                     index = step.length
                 }
                 index ++
             }
+            if (historyX[key].start === historyX[key].end) delete historyX[key]
+            else allHistory.push(historyX[key])
         }
     }
 
@@ -480,8 +526,9 @@ const getSortCut = (step = [], obstacle = []) => {
         const stepCurrent = step[i]
         if (step[i + 1] && stepCurrent.y === step[i + 1].y) continue
         index = i
-        if (!historyY[stepCurrent.y]) {
-            historyY[stepCurrent.y] = {
+        key = stepCurrent.y + 'z' + stepCurrent.x
+        if (!historyY[key]) {
+            historyY[key] = {
                 start: index,
                 end: index,
                 startPoint: Object.assign({}, step[i]),
@@ -490,18 +537,21 @@ const getSortCut = (step = [], obstacle = []) => {
             index ++
             while(index < step.length) {
                 if (step[index].y === stepCurrent.y) {
-                    historyY[stepCurrent.y].end = index
-                    historyY[stepCurrent.y].endPoint = Object.assign({}, step[index])
+                    historyY[key].end = index
+                    historyY[key].endPoint = Object.assign({}, step[index])
                     index = step.length
                 }
                 index ++
             }
+            if (historyY[key].start === historyY[key].end) delete historyY[key]
+            else allHistory.push(historyY[key])
         }
     }
+    return allHistory.concat(historyY)
+}
 
-    historyX = historyX.filter((item) => item.start !== item.end)
-    historyY = historyY.filter((item) => item.start !== item.end)
-    return [...historyX, ...historyY]
+export const getTargetClass = (position = dPattern) => {
+    return document.body.getElementsByClassName(`board-x${position.x}y${position.y}`)[0]
 }
 
 export const optimationStep = (step = [], obstacle = [], deepLevel = 0) => {
@@ -510,15 +560,12 @@ export const optimationStep = (step = [], obstacle = [], deepLevel = 0) => {
     let result = []
     sortCuts.forEach((item, index) => {
         let hasil = cutStep(step, item.startPoint, item.endPoint, obstacle)
-        
         if (hasil.length !== step.length) {
             result.push(hasil)
         }
     })
     let lastResult = null
-
     if (result.length === 0) return step
-
     result.forEach((item) => {
         if (!lastResult) {
             lastResult = item
@@ -526,7 +573,7 @@ export const optimationStep = (step = [], obstacle = [], deepLevel = 0) => {
             lastResult = item
         }
     })
-    let checkSamePath = 0
+    // let checkSamePath = 0
     // result.forEach((item, index) => {
     //     const resultTemp = isEqualPatternList(item, lastResult)
     //     if (resultTemp) {
@@ -534,8 +581,13 @@ export const optimationStep = (step = [], obstacle = [], deepLevel = 0) => {
     //         checkSamePath ++
     //     }
     // })
-
-    console.log("deepLevel", deepLevel, checkSamePath, result.length)
-
-    return optimationStep([...lastResult], obstacle, deepLevel + 1)
+    return optimationStep([...removeDuplicatePattern(lastResult)], obstacle, deepLevel + 1)
 }
+
+export const getRotate = (pattern1 = dPattern, pattern2 = dPattern) => {
+    const move = gapPattern(pattern1, pattern2)
+    if (move.y >= 1) return 90
+    else if (move.x <= -1) return 180
+    else if (move.y <= -1) return 270
+    return 0
+} 

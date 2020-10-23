@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { last, range } from "../helpers/dataHelpers"
-import { checkEatTarget, generateGrid, dPattern, gapPattern, generateFoodPosition, getMoveExcept, patternToString, indexOfPattern, isEqualPattern, checkOutsideBoardSize, dfsStepNode, optimationStep } from "../helpers/gameSnakeHelpers"
+import { checkEatTarget, generateGrid, dPattern, gapPattern, generateFoodPosition, getMoveExcept, patternToString, indexOfPattern, isEqualPattern, checkOutsideBoardSize, dfsStepNode, optimationStep, getRotate } from "../helpers/gameSnakeHelpers"
 import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import * as appStateAction from "../stores/actions/appStateAction"
 import * as gameBusinessAction from "../stores/actions/business/gameBusinessAction"
@@ -10,6 +10,7 @@ import { bindActionCreators } from "redux"
 import "./BoardComponent.scss"
 import GameEnums from "../enums/gameEnums"
 import { runningProcessStep } from "../helpers/intervalHelpers"
+import TargetItem from "./TargetItem"
 
 const mapStateToProps = (state) => {
     return {
@@ -63,8 +64,12 @@ const BoardComponent = (props) => {
             visualizeFinding: props.visualizeFinding,
         }
         if (props.startGame) {
+            // const optimation = optimationStep(snakePosition, wallPosition)
+            // setSnakePosition(optimation)
+            // --------------------------------
             areaSearchStep(obj)
             const historyAreaSearch = [...obj.historyAreaSearch]
+            obj.areaSearch = last(historyAreaSearch)
             let interval = setInterval(() => {
                 if(historyAreaSearch.length <= 0) {
                     clearInterval(interval)
@@ -79,14 +84,7 @@ const BoardComponent = (props) => {
                 let [ areaNext ] = historyAreaSearch
                 historyAreaSearch.shift()
                 setAreaSearch(areaNext)
-                
             }, timerInterval)
-            // dfsStep(obj)
-            // let snakePositionTemp = [...snakePosition]
-            // let [ headSnake ] = snakePositionTemp
-            // const setSnakePositionTemp = (data) => snakePositionTemp = data
-            // followingHeader(headSnake, snakePositionTemp, boardSize, setSnakePositionTemp)
-            // setSnakePosition([...snakePositionTemp])
         }
         
         return () => {
@@ -137,8 +135,8 @@ const BoardComponent = (props) => {
         if (snakePositionForRender.length === 0) return false
         let index = indexOfPattern({x: positionX, y: positionY}, snakePositionForRender)
         if (index !== -1) {
-            if (snakePosition[0].x === snakePositionForRender[index].x && snakePosition[0].y === snakePositionForRender[index].y)
-                result =  result + 'Head'
+            // if (snakePosition[0].x === snakePositionForRender[index].x && snakePosition[0].y === snakePositionForRender[index].y)
+            //     result =  result + 'Head'
             snakePositionForRender.splice(index, 1)
             return result
         } 
@@ -180,8 +178,6 @@ const BoardComponent = (props) => {
         let newAreaSearch = []
         for(let i = 0; i < areaSearchOriginal.length; i ++) {
             nextSearch = true
-            // if (deepLevel === maxDeep) 
-            //     console.log("loopFor", areaSearchOriginal[i], deepLevel)
             currentPosition = patternToString(areaSearchOriginal[i])
             if(!visited[currentPosition]) visited[currentPosition] = []
             while(nextSearch) {
@@ -191,8 +187,6 @@ const BoardComponent = (props) => {
                 }
                 
                 nextSearch = getMoveExcept(visited[currentPosition], areaSearchOriginal[i], boardSize)
-                // if (deepLevel === maxDeep) 
-                //     console.log("check", nextSearch, areaSearchOriginal[i], deepLevel)
                 visited[currentPosition].push(nextSearch)
                 if (nextSearch && indexOfPattern(nextSearch, areaSearchTemp) === -1) {
                     areaSearchTemp.push(Object.assign({}, nextSearch))
@@ -206,8 +200,6 @@ const BoardComponent = (props) => {
         let obstacle = [snakePosition[0], ...areaSearched, ...wallPosition]
         newAreaSearch = newAreaSearch.filter((item) => indexOfPattern(item, obstacle) === -1)
         
-        
-       
         areaSearched = [...areaSearched, ...newAreaSearch]
         if (newAreaSearch.length > 0) {
             data.areaSearched = [...areaSearched].map((item) => Object.assign({}, item))
@@ -220,7 +212,6 @@ const BoardComponent = (props) => {
     }
 
     const dfsStep = (data) => {
-        
         let interval
         let step = []
         let visited = []
@@ -255,7 +246,7 @@ const BoardComponent = (props) => {
 
             visited[currentPosition].push(Object.assign({}, nextStep))
             
-            if (indexOfPattern(nextStep, [...wallPosition, ...snakePositionTemp]) >= 0 || checkOutsideBoardSize(Object.assign({}, nextStep), boardSize)) {
+            if (indexOfPattern(nextStep, [...wallPosition, ...snakePositionTemp]) >= 0 || indexOfPattern(nextStep, [...data.areaSearch]) === -1 ||  checkOutsideBoardSize(Object.assign({}, nextStep), boardSize)) {
                 continue
             }
             move = gapPattern(Object.assign({}, headNode), Object.assign({}, nextStep))
@@ -266,9 +257,9 @@ const BoardComponent = (props) => {
             
             if (checkEatTarget(snakePositionTemp, foodPositionTemp)) {
                 if (props.optimizePath) {
-                    const optimation = optimationStep([...step], wallPosition)
-                    step = optimation
-                    allStep.push(optimation)
+                    const optimation = optimationStep([snakePosition[0], ...step], wallPosition)
+                    step = [...optimation]
+                    allStep.push([...optimation])
                 }
                 eatFood = true
                 continue
@@ -306,28 +297,16 @@ const BoardComponent = (props) => {
         
         const onDone = () => appStateAction.setStartGame(false)
 
-        if(!data.visualizeFinding)
-        runningProcessStep(data, snakePositionOriginal, log, onDone, () => {}, step, (movingNext, data) => { return [movingNext, ...data] }, setSnakePosition, timerInterval)
+        if(data.visualizeFinding)
+            runningProcessStep(data, snakePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setSnakePosition, timerInterval)
         else
-        runningProcessStep(data, snakePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setSnakePosition, timerInterval)
+            runningProcessStep(data, [], log, onDone, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setSnakePosition, timerInterval)
 
         index = 0
     }
 
-
-    const checkPositionTarget = ( positionX = 0, positionY = 0, result = 'foodActive') => {
-        let check = false
-        if (positionX === foodPosition.x && positionY === foodPosition.y) {
-            check = true
-        }
-        if (check !== false) {
-            return result
-        } else {
-            return ""
-        }
-    }
-
     const setWallActive = (e, value, positionX, positionY) => {
+        const { gameStateAction } = props
         e.preventDefault()
         e.stopPropagation();
         e.nativeEvent.stopImmediatePropagation();
@@ -339,6 +318,11 @@ const BoardComponent = (props) => {
         } else {
             setMouseDownType(GameEnums.SET_WALL)
         }
+        if (!value) {
+            gameStateAction.setFoodPosition(foodPosition)
+            gameStateAction.setSnakePosition(snakePosition)
+            gameStateAction.setWallPosition(wallPosition)
+        }
 
         if (value === 'check') {
             setMouseDownActive(true)
@@ -349,18 +333,18 @@ const BoardComponent = (props) => {
     }
 
     const addOrRemoveWall = (positionX, positionY, forceActive = false) => {
-        const { gameBusinessAction, gameStateAction } = props
+        const { gameBusinessAction } = props
         if ((mouseDownActive || forceActive) && !props.startGame) {
             if (!isEqualPattern(snakePosition[0], {x: positionX, y: positionY}) && !isEqualPattern(foodPosition, {x: positionX, y: positionY})) {
                 switch(mouseDownType) {
                     case GameEnums.DRAG_NODE:
-                        gameStateAction.setSnakePosition([{x: positionX, y: positionY}])
+                        setSnakePosition([{x: positionX, y: positionY}])
                         break
                     case GameEnums.SET_WALL:
-                        gameBusinessAction.addOrRemoveWall(positionX, positionY)
+                        setWallPosition(gameBusinessAction.addOrRemoveData({x: positionX, y: positionY}, wallPosition))
                         break
                     case GameEnums.DRAG_TARGET:
-                        gameStateAction.setFoodPosition({x: positionX, y: positionY})
+                        setFoodPosition({x: positionX, y: positionY})
                         break
                     default:
                         break
@@ -382,18 +366,22 @@ const BoardComponent = (props) => {
                     return (
                         <div
                             key={`board-item-${indexX}-${indexY}`} 
-                            onMouseOver={() => addOrRemoveWall(indexX, indexY)}
+                            onMouseEnter={() => addOrRemoveWall(indexX, indexY)}
                             onMouseDown={(e) => setWallActive(e, 'check', indexX, indexY)}
-                            className={`board-item ${checkAreaSearch(indexX, indexY)} ${checkPositionSnake(indexX, indexY)} ${checkPositionTarget(indexX, indexY)} ${checkWallPosition(indexX, indexY)}`}
-                        >
-                            {isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon/></div>}
-                            {/* {isEqualPattern(snakePosition[snakePosition.length - 1], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon/></div>} */}
-                            <div>
-                                x: {indexX}
+                            className={`board-item ${checkAreaSearch(indexX, indexY)} ${checkPositionSnake(indexX, indexY)}`}
+                        >   
+                            <div className={`board-item unborder ${checkWallPosition(indexX, indexY)}`}>
+                                {/* {!isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && !isEqualPattern(last(snakePosition), {x: indexX, y: indexY}) && <React.Fragment>
+                                <div>x: {indexX}</div>
+                                <div>y: {indexY}</div>
+                                </React.Fragment>} */}
+                                
+                                {isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(snakePosition[1] || snakePosition[0], snakePosition[0])}deg)`}}/></div>}
+                                {snakePosition.length > 1 && isEqualPattern(last(snakePosition), {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon/></div>}
+                                {isEqualPattern(foodPosition, {x: indexX, y: indexY}) && !isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && <TargetItem/>}
                             </div>
-                            <div>
-                                y: {indexY}
-                            </div>
+                            
+                            
                         </div>
                     )
                 })

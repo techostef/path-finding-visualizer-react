@@ -22,7 +22,6 @@ export const runningProcessStep = (
         }
         const [ movingNext ] = step
         step.shift()
-
         if (movingNext) {
             dataNode = setDataNode(movingNext, dataNode)
             setNodePosition([...dataNode])
