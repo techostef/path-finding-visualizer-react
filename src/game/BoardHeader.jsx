@@ -2,27 +2,29 @@ import React from "react"
 import "./BoardHeader.scss"
 import { Button } from 'react-bootstrap'
 import * as appStateAction from "../stores/actions/appStateAction"
-import * as gameBusinessAction from "../stores/actions/business/gameBusinessAction"
-import * as gameStateAction from "../stores/actions/gameStateAction"
+import * as pathFindingBusinessAction from "../stores/actions/business/pathFindingBusinessAction"
+import * as pathFindingStateAction from "../stores/actions/pathFindingStateAction"
 import { connect } from "react-redux"
 import { bindActionCreators } from "redux"
 import InputRange from "../components/inputs/InputRange"
-import { dPattern } from "../helpers/gameSnakeHelpers"
+import { dPattern } from "../helpers/pathFindingHelper"
+import ButtonOptions from "../components/inputs/ButtonOptions"
 
 const mapStateToProps = (state) => {
     return {
-        boardSize: state.gameState.boardSize,
-        optimizePath: state.gameState.optimizePath,
+        algorithm: state.pathFindingState.algorithm,
+        boardSize: state.pathFindingState.boardSize,
+        optimizePath: state.pathFindingState.optimizePath,
         startGame: state.appState.startGame,
-        visualizeFinding: state.gameState.visualizeFinding,
+        visualizeFinding: state.pathFindingState.visualizeFinding,
     }
 }
 
 const mapDispatchToProps = (dispatch) => {
     return {
         appStateAction: bindActionCreators(appStateAction, dispatch),
-        gameBusinessAction: bindActionCreators(gameBusinessAction, dispatch),
-        gameStateAction: bindActionCreators(gameStateAction, dispatch),
+        pathFindingBusinessAction: bindActionCreators(pathFindingBusinessAction, dispatch),
+        pathFindingStateAction: bindActionCreators(pathFindingStateAction, dispatch),
     }
 }
 
@@ -32,42 +34,50 @@ const BoardHeader = (props) => {
         appStateAction.setStartGame(!startGame)
     }
 
+    const isSelectedAlgorithm = props.algorithm.find((item) => item.isSelected)
+
     const restartGame = () => {
-        const { gameBusinessAction, startGame } = props
+        const { pathFindingBusinessAction, startGame } = props
         if (!startGame) {
-            gameBusinessAction.restartGame()
+            pathFindingBusinessAction.restartGame()
         }
     }
 
     const onChangeBoardSize = (e) => {
-        const { gameStateAction } = props
+        const { pathFindingStateAction } = props
         const boardSize = parseInt(e.target.value)
-        gameStateAction.setBoarSize(boardSize < 4 ? 4 : boardSize)
-        gameStateAction.setSnakePosition([dPattern])
-
+        pathFindingStateAction.setBoarSize(boardSize < 4 ? 4 : boardSize)
+        pathFindingStateAction.setSnakePosition([dPattern])
     }
 
     const clearWallPosition = (e) => {
-        const { gameStateAction } = props
-        gameStateAction.setWallPosition([])
+        const { pathFindingStateAction } = props
+        pathFindingStateAction.setWallPosition([])
     }
 
     const handleVisualizeFinding = (e) => {
-        const { gameStateAction } = props
-        gameStateAction.setVisualizeFinding(true)
-        gameStateAction.setOptimizePath(false)
+        const { pathFindingStateAction } = props
+        pathFindingStateAction.setVisualizeFinding(true)
+        pathFindingStateAction.setOptimizePath(false)
+    }
+
+    const onChangeAlgorithm = (item) => {
+        const { pathFindingBusinessAction } = props
+        pathFindingBusinessAction.handleIsSelected(item.id, true)
     }
 
     const handleOptimizePath = (e) => {
-        const { gameStateAction } = props
-        gameStateAction.setVisualizeFinding(false)
-        gameStateAction.setOptimizePath(true)
+        const { pathFindingStateAction } = props
+        pathFindingStateAction.setVisualizeFinding(false)
+        pathFindingStateAction.setOptimizePath(true)
     }
+
+    console.log("renderHeader", props)
 
     return (
         <div className="board-header">
             
-            <div className="board-size-control">
+            {/* <div className="board-size-control">
                 <div className="text-content">
                     Visualize Finding
                 </div>
@@ -78,13 +88,16 @@ const BoardHeader = (props) => {
                     Optimize Path
                 </div>
                 <input type="radio" name="wayinput" disabled={props.startGame} defaultChecked={props.optimizePath} onChange={handleOptimizePath} />
-            </div>
-            <Button 
-                className="start-button" 
+            </div> */}
+            <ButtonOptions 
+                disabled={props.startGame}
                 onClick={startStopGame}
-            >
-                {props.startGame ? "Stop" : "Start"}
-            </Button>
+                labelKey={'label'}
+                options={props.algorithm}
+                valueKey={'id'}
+                onChangeOptions={onChangeAlgorithm}
+                value={isSelectedAlgorithm && isSelectedAlgorithm.id}
+            />
             <Button 
                 disabled={props.startGame}
                 className="restart-button" 
@@ -97,7 +110,7 @@ const BoardHeader = (props) => {
                 className="restart-button" 
                 onClick={restartGame}
             >
-                Clear Board
+                Clear Path
             </Button>
         </div>
     )

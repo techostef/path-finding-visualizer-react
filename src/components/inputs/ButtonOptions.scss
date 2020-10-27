@@ -1,0 +1,49 @@
+.button-options {
+    display: flex;
+    .button-content {
+        display: flex;
+        align-items: center;
+        .label {
+            margin-right: 20px;
+        }
+    }
+    .icon-container {
+        position: relative;
+        svg {
+            border-left: 1px solid white;
+            height: 18px;
+            width: 18px;
+            position: absolute;
+            z-index: 999;
+            top: 6px;
+            left: -25px;
+            &:hover {
+                cursor: pointer;
+                background-color: white !important;
+            }
+        }
+        .container-options {
+            position: absolute;
+            top: 34px;
+            right: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.75);
+            -webkit-box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.75);
+            .option-item {
+                white-space: nowrap;
+                text-align: left;
+                padding: 4px;
+                border-radius: 4px;
+                &:hover {
+                    background-color: grey;
+                    color: white;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
+}

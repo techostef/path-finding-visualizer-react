@@ -2,9 +2,9 @@ import { combineReducers } from 'redux';
 
 // New ------------------------------------------------------
 import appState from './appState';
-import gameState from './gameState';
+import pathFindingState from './pathFindingState';
 
 export default combineReducers({
     appState,
-    gameState,
+    pathFindingState,
 });

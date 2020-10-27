@@ -1,4 +1,4 @@
-import { checkEatBody } from "./gameSnakeHelpers"
+import { checkEatBody } from "./pathFindingHelper"
 
 export const runningProcessStep = (
     data = {}, 
@@ -13,13 +13,6 @@ export const runningProcessStep = (
 ) => {
     let interval 
     interval = setInterval(() => {
-        if (data.startGame === false) {
-            clearInterval(interval)
-            setDefault()
-            log()
-            return 
-
-        }
         const [ movingNext ] = step
         step.shift()
         if (movingNext) {

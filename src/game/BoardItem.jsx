@@ -1,6 +1,6 @@
 import React from "react"
 import { last } from "../helpers/dataHelpers"
-import { getRotate, isEqualPattern } from "../helpers/gameSnakeHelpers"
+import { getRotate, isEqualPattern } from "../helpers/pathFindingHelpers"
 import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import TargetItem from "./TargetItem"
 

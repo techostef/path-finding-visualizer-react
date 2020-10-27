@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 const InputDropDown = (props) => {
     const onChange = (e) => {
         console.log("e", e.target.value)
-        const item = props.options.find((item) => item[props.valueKey] == e.target.value)
+        const item = props.options.find((item) => item[props.valueKey] === e.target.value)
         props.onChange(item)
     }
     return (

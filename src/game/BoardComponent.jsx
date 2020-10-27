@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from "react"
 import { last, range } from "../helpers/dataHelpers"
-import { checkEatTarget, generateGrid, dPattern, gapPattern, generateFoodPosition, getMoveExcept, patternToString, indexOfPattern, isEqualPattern, checkOutsideBoardSize, dfsStepNode, optimationStep, getRotate } from "../helpers/gameSnakeHelpers"
+import { generateGrid, dPattern, generateTargetPosition, indexOfPattern, isEqualPattern, getRotate } from "../helpers/pathFindingHelper"
 import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import * as appStateAction from "../stores/actions/appStateAction"
-import * as gameBusinessAction from "../stores/actions/business/gameBusinessAction"
-import * as gameStateAction from "../stores/actions/gameStateAction"
+import * as gameBusinessAction from "../stores/actions/business/pathFindingBusinessAction"
+import * as pathFindingStateAction from "../stores/actions/pathFindingStateAction"
 import { batch, connect } from "react-redux"
 import { bindActionCreators } from "redux"
 import "./BoardComponent.scss"
-import GameEnums from "../enums/gameEnums"
+import DataEnums from "../enums/pathFindingEnums"
 import { runningProcessStep } from "../helpers/intervalHelpers"
 import TargetItem from "./TargetItem"
+import { getAreaBfs, getBfsStep } from "../pathFinder/bfsHelper"
+import { getDfsStep } from "../pathFinder/dfsHelper"
 
 const mapStateToProps = (state) => {
     return {
-        areaSearch: state.gameState.areaSearch,
-        boardSize: state.gameState.boardSize,
-        foodPosition: state.gameState.foodPosition,
-        optimizePath: state.gameState.optimizePath,
-        snakePosition: state.gameState.snakePosition,
+        algorithm: state.pathFindingState.algorithm,
+        areaSearch: state.pathFindingState.areaSearch,
+        boardSize: state.pathFindingState.boardSize,
+        targetPosition: state.pathFindingState.targetPosition,
+        nodePosition: state.pathFindingState.nodePosition,
+        optimizePath: state.pathFindingState.optimizePath,
         startGame: state.appState.startGame,
-        wallPosition: state.gameState.wallPosition,
-        visualizeFinding: state.gameState.visualizeFinding,
+        wallPosition: state.pathFindingState.wallPosition,
+        visualizeFinding: state.pathFindingState.visualizeFinding,
     }
 }
 
@@ -29,26 +32,27 @@ const mapDispatchToProps = (dispatch) => {
     return {
         appStateAction: bindActionCreators(appStateAction, dispatch),
         gameBusinessAction: bindActionCreators(gameBusinessAction, dispatch),
-        gameStateAction: bindActionCreators(gameStateAction, dispatch),
+        pathFindingStateAction: bindActionCreators(pathFindingStateAction, dispatch),
     }
 }
 
 const BoardComponent = (props) => {
+    const isSelectedAlgorithm = props.algorithm.find((item) => item.isSelected)
+
     const [boardSize, setBoardSize] = useState(props.boardSize)
     const timerInterval = props.timerInterval
-    const [history, setHistory] = useState([])
     const [levelEat, setLevelEat] = useState(0)
     const styleBoardContainer = Object.assign(generateGrid(boardSize), {width: window.screen.height + "px"})
     const [mouseDownActive, setMouseDownActive] = useState(false)
-    const [mouseDownType, setMouseDownType] = useState(GameEnums.SET_WALL)
+    const [mouseDownType, setMouseDownType] = useState(DataEnums.SET_WALL)
 
     const [areaSearch, setAreaSearch] = useState(props.areaSearch)
-    const [snakePosition, setSnakePosition] = useState(props.snakePosition)
+    const [nodePosition, setNodePosition] = useState(props.nodePosition)
 
-    const [foodPosition, setFoodPosition] = useState(props.foodPosition)
+    const [targetPosition, setTargetPosition] = useState(props.targetPosition)
     const [wallPosition, setWallPosition] = useState(props.wallPosition)
     const areaSearchForRender = [...areaSearch]
-    const snakePositionForRender = [...snakePosition]
+    const nodePositionForRender = [...nodePosition]
     const wallPositionForRender = [...wallPosition]
     const debug = false
 
@@ -59,32 +63,30 @@ const BoardComponent = (props) => {
             historyAreaSearch: [],
             areaSearched: [],
             areaSearch: props.areaSearch,
-            foodPosition: props.foodPosition,
-            snakePosition: props.snakePosition,
+            targetPosition: props.targetPosition,
+            nodePosition: props.nodePosition,
             visualizeFinding: props.visualizeFinding,
         }
         if (props.startGame) {
-            // const optimation = optimationStep(snakePosition, wallPosition)
-            // setSnakePosition(optimation)
+            // const optimation = optimationStep(nodePosition, wallPosition)
+            // setNodePosition(optimation)
             // --------------------------------
-            areaSearchStep(obj)
-            const historyAreaSearch = [...obj.historyAreaSearch]
-            obj.areaSearch = last(historyAreaSearch)
-            let interval = setInterval(() => {
-                if(historyAreaSearch.length <= 0) {
-                    clearInterval(interval)
-                    if (indexOfPattern(props.foodPosition, last(obj.historyAreaSearch)) >= 0) {
-                        dfsStep(obj)
-                    } else {
-                        setAreaSearch([])
-                        appStateAction.setStartGame(false)
-                    }
-                    return
-                }
-                let [ areaNext ] = historyAreaSearch
-                historyAreaSearch.shift()
-                setAreaSearch(areaNext)
-            }, timerInterval)
+            const [ headNode ] = nodePosition
+            switch(isSelectedAlgorithm && isSelectedAlgorithm.id) {
+                case 1:
+                    obj = Object.assign(obj, getAreaBfs(headNode, targetPosition, wallPosition, boardSize))
+                    bfsStep(obj, headNode)
+                    break;
+                case 2:
+                    obj = Object.assign(obj, getAreaBfs(headNode, targetPosition, wallPosition, boardSize))
+                    dfsStep(obj, headNode)
+                    break;
+                default:
+                    setAreaSearch([])
+                    appStateAction.setStartGame(false)
+                    break;
+            }
+            
         }
         
         return () => {
@@ -96,8 +98,8 @@ const BoardComponent = (props) => {
     useEffect(() => {
         if (!props.startGame) {
             setBoardSize(props.boardSize)
-            setSnakePosition([dPattern])
-            setFoodPosition(generateFoodPosition([...snakePosition, ...wallPosition], props.boardSize))
+            setNodePosition([dPattern])
+            setTargetPosition(generateTargetPosition([...nodePosition, ...wallPosition], props.boardSize))
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.boardSize])
@@ -111,10 +113,10 @@ const BoardComponent = (props) => {
 
     useEffect(() => {
         if (!props.startGame) {
-            setFoodPosition(props.foodPosition)
+            setTargetPosition(props.targetPosition)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.foodPosition])
+    }, [props.targetPosition])
 
     useEffect(() => {
         if (!props.startGame) {
@@ -125,19 +127,19 @@ const BoardComponent = (props) => {
 
     useEffect(() => {
         if (!props.startGame) {
-            setSnakePosition(props.snakePosition)
+            setNodePosition(props.nodePosition)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.snakePosition])
+    }, [props.nodePosition])
 
 
-    const checkPositionSnake = ( positionX = 0, positionY = 0, result = 'active') => {
-        if (snakePositionForRender.length === 0) return false
-        let index = indexOfPattern({x: positionX, y: positionY}, snakePositionForRender)
+    const checkPositionNode = ( positionX = 0, positionY = 0, result = 'active') => {
+        if (nodePositionForRender.length === 0) return false
+        let index = indexOfPattern({x: positionX, y: positionY}, nodePositionForRender)
         if (index !== -1) {
-            // if (snakePosition[0].x === snakePositionForRender[index].x && snakePosition[0].y === snakePositionForRender[index].y)
+            // if (nodePosition[0].x === nodePositionForRender[index].x && nodePosition[0].y === nodePositionForRender[index].y)
             //     result =  result + 'Head'
-            snakePositionForRender.splice(index, 1)
+            nodePositionForRender.splice(index, 1)
             return result
         } 
 
@@ -146,7 +148,8 @@ const BoardComponent = (props) => {
 
     const checkWallPosition = (positionX = 0, positionY = 0, result = 'wall') => {
         if (wallPositionForRender.length === 0) return false
-        let index = indexOfPattern({x: positionX, y: positionY}, wallPositionForRender)
+        const pattern = {x: positionX, y: positionY}
+        let index = indexOfPattern(pattern, wallPositionForRender)
         if (index !== -1) {
             wallPositionForRender.splice(index, 1)
             return result
@@ -157,7 +160,8 @@ const BoardComponent = (props) => {
 
     const checkAreaSearch = (positionX = 0, positionY = 0, result = 'areaSearch') => {
         if (areaSearchForRender.length === 0) return false
-        let index = indexOfPattern({x: positionX, y: positionY}, areaSearchForRender)
+        const pattern = {x: positionX, y: positionY}
+        let index = indexOfPattern(pattern, areaSearchForRender)
         if (index !== -1) {
             areaSearchForRender.splice(index, 1)
             return result
@@ -166,167 +170,85 @@ const BoardComponent = (props) => {
         return ""
     }
 
-    const areaSearchStep = (data, deepLevel = 0) => {
-        
-        let areaSearchOriginal = data.areaSearch.length === 0 ? [snakePosition[0]] : [...data.areaSearch]
-        let areaSearchTemp = [...areaSearchOriginal]
-        let nextSearch
-        let currentPosition
-        let historyAreaSearch = []
-        let visited = data.visited ? data.visited : []
-        historyAreaSearch.push(areaSearchTemp)
-        let newAreaSearch = []
-        for(let i = 0; i < areaSearchOriginal.length; i ++) {
-            nextSearch = true
-            currentPosition = patternToString(areaSearchOriginal[i])
-            if(!visited[currentPosition]) visited[currentPosition] = []
-            while(nextSearch) {
-                if (visited[currentPosition] && visited[currentPosition].length >= 4) {
-                    nextSearch = null
-                    continue
+    const bfsStep = (data, start) => {
+        const { appStateAction, pathFindingStateAction } = props
+        let historyAreaSearch = [...data.historyAreaSearch]
+        data.areaSearch = last(historyAreaSearch)
+        let interval = setInterval(() => {
+            if(historyAreaSearch.length <= 0) {
+                clearInterval(interval)
+                const isTargetInsideAreaSearch = indexOfPattern(props.targetPosition, last(data.historyAreaSearch)) >= 0
+                if (isTargetInsideAreaSearch) {
+                    const allStep = getBfsStep(data.historyAreaSearch, targetPosition)
+                    let step = [start]
+                    interval = setInterval((item) => {
+                        const nextMove = allStep.pop()
+                        step = [nextMove, ...step]
+                        setNodePosition(step)
+                        if (allStep.length === 0) {
+                            clearInterval(interval)
+                            appStateAction.setStartGame(false)
+                            pathFindingStateAction.setNodePosition(step)
+                        }
+                    }, timerInterval)
+                } else {
+                    setAreaSearch([])
+                    appStateAction.setStartGame(false)
                 }
-                
-                nextSearch = getMoveExcept(visited[currentPosition], areaSearchOriginal[i], boardSize)
-                visited[currentPosition].push(nextSearch)
-                if (nextSearch && indexOfPattern(nextSearch, areaSearchTemp) === -1) {
-                    areaSearchTemp.push(Object.assign({}, nextSearch))
-                    newAreaSearch.push(Object.assign({}, nextSearch))
-                    historyAreaSearch.push([...areaSearchTemp].map((item) => Object.assign({}, item)))
-                }
+                return
             }
-        }
-
-        let areaSearched = data.areaSearched ? [...data.areaSearched] : []
-        let obstacle = [snakePosition[0], ...areaSearched, ...wallPosition]
-        newAreaSearch = newAreaSearch.filter((item) => indexOfPattern(item, obstacle) === -1)
-        
-        areaSearched = [...areaSearched, ...newAreaSearch]
-        if (newAreaSearch.length > 0) {
-            data.areaSearched = [...areaSearched].map((item) => Object.assign({}, item))
-            data.areaSearch = [...newAreaSearch].map((item) => Object.assign({}, item))
-            data.visited = [...visited].map((item) => Object.assign({}, item))
-            data.historyAreaSearch.push(areaSearched)
-            if (indexOfPattern(props.foodPosition, areaSearched) === -1)
-                areaSearchStep(data, deepLevel + 1)
-        }
+            let [ areaNext ] = historyAreaSearch
+            historyAreaSearch.shift()
+            setAreaSearch(areaNext)
+        }, timerInterval)
     }
 
-    const dfsStep = (data) => {
-        let interval
-        let step = []
-        let visited = []
-        let move = dPattern
-        let moveAll = []
-        let snakePositionTemp = data.snakePosition.map((item) => Object.assign({}, item))
-        let snakePositionOriginal = data.snakePosition.map((item) => Object.assign({}, item))
-        let foodPositionTemp = {...foodPosition}
-        let historyTemp = [...history]
-        let eatFood = false
-        let nextStep
-        let allStep = []
-        let currentPosition 
-        let index = -1
+    const dfsStep = (dataParams, start = dPattern) => {
+        let nodePositionOriginal = dataParams.nodePosition.map((item) => Object.assign({}, item))
+    
         // ----------------------------------------------------
 
-        const setVisited = (data) => visited = data
+        const { historyAllStep: allStep, step} = getDfsStep(dataParams.nodePosition[0], targetPosition, wallPosition, boardSize)
 
-        const prevStep = (r = 0) => {
-            snakePositionTemp.shift()
-            step.pop()
-            allStep.push([...step].reverse().map((item) => Object.assign({}, item, {c: r})))
+        const { appStateAction } = props
+        const log = () => {}
+
+        const onDone = () => {
+            appStateAction.setStartGame(false)
+            runningProcessStep(dataParams, [nodePosition[0]], log, () => {}, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setNodePosition, timerInterval)
         }
 
-        while (!eatFood) {
-            index ++
-            let [ headNode ] = snakePositionTemp
-            currentPosition = patternToString(headNode)
-
-            nextStep = dfsStepNode(visited, currentPosition, foodPosition, [...wallPosition], snakePositionTemp.map((item) => Object.assign({}, item)), boardSize, prevStep, setVisited)
-            if (nextStep === GameEnums.CONTINUE) continue
-
-            visited[currentPosition].push(Object.assign({}, nextStep))
-            
-            if (indexOfPattern(nextStep, [...wallPosition, ...snakePositionTemp]) >= 0 || indexOfPattern(nextStep, [...data.areaSearch]) === -1 ||  checkOutsideBoardSize(Object.assign({}, nextStep), boardSize)) {
-                continue
-            }
-            move = gapPattern(Object.assign({}, headNode), Object.assign({}, nextStep))
-            moveAll.push(Object.assign({}, move))
-            step.push(Object.assign({}, nextStep))
-            allStep.push([...step].reverse().map((item) => Object.assign({}, item)))
-            snakePositionTemp = [Object.assign({}, nextStep), ...snakePositionTemp]
-            
-            if (checkEatTarget(snakePositionTemp, foodPositionTemp)) {
-                if (props.optimizePath) {
-                    const optimation = optimationStep([snakePosition[0], ...step], wallPosition)
-                    step = [...optimation]
-                    allStep.push([...optimation])
-                }
-                eatFood = true
-                continue
-            }
-        }
-
-        const { appStateAction, gameStateAction } = props
-
-        const setDefault = () => {
-            const newSnake = [...snakePositionOriginal]
-            const newFood = {...foodPositionTemp}
-            if (historyTemp.length > 5) historyTemp.shift()
-            setHistory([...historyTemp, {
-                snakePosition: newSnake,
-                foodPosition: newFood,
-                wallPosition: props.wallPosition,
-            }])
-
-            if (debug)
-            console.log(`history`, JSON.stringify(historyTemp))
-            setSnakePosition(newSnake)
-            setFoodPosition(newFood)
-            gameStateAction.setSnakePosition(newSnake)
-            gameStateAction.setFoodPosition(newFood)
-            // setLevelEat(levelEat + 1)
-        }
-
-        const log = () => {
-            clearInterval(interval)
-            setDefault()
-            if (debug)
-            console.log("snakePosition", JSON.stringify([...snakePositionOriginal]), 'food', JSON.stringify(foodPositionTemp), 'wall', JSON.stringify(props.wallPosition))
-            return 
-        }
-        
-        const onDone = () => appStateAction.setStartGame(false)
-
-        if(data.visualizeFinding)
-            runningProcessStep(data, snakePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setSnakePosition, timerInterval)
-        else
-            runningProcessStep(data, [], log, onDone, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setSnakePosition, timerInterval)
-
-        index = 0
+        runningProcessStep(dataParams, nodePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setAreaSearch, timerInterval)
     }
 
     const setWallActive = (e, value, positionX, positionY) => {
-        const { gameStateAction } = props
+        const { pathFindingStateAction } = props
         e.preventDefault()
         e.stopPropagation();
         e.nativeEvent.stopImmediatePropagation();
 
-        if (isEqualPattern(snakePosition[0], {x: positionX, y: positionY})) {
-            setMouseDownType(GameEnums.DRAG_NODE)
-        } else if (isEqualPattern(foodPosition, {x: positionX, y: positionY})) {
-            setMouseDownType(GameEnums.DRAG_TARGET)
+        const patternCurrent = {x: positionX, y: positionY}
+
+        if (nodePosition.length === 1 && isEqualPattern(nodePosition[0], patternCurrent)) {
+            setMouseDownType(DataEnums.DRAG_NODE)
+        } else if (nodePosition.length > 1 && isEqualPattern(last(nodePosition), patternCurrent)) {
+            setMouseDownType(DataEnums.DRAG_TAIL)
+        } else if (nodePosition.length > 1 && isEqualPattern(targetPosition, patternCurrent)) {
+            setMouseDownType(DataEnums.DRAG_TARGET_AND_RENEW)
+        } else if (isEqualPattern(targetPosition, patternCurrent)) {
+            setMouseDownType(DataEnums.DRAG_TARGET)
         } else {
-            setMouseDownType(GameEnums.SET_WALL)
+            setMouseDownType(DataEnums.SET_WALL)
         }
         if (!value) {
             batch(() => {
-                gameStateAction.setFoodPosition(foodPosition)
-                gameStateAction.setSnakePosition(snakePosition)
-                gameStateAction.setWallPosition(wallPosition)
+                pathFindingStateAction.setTargetPosition(targetPosition)
+                pathFindingStateAction.setNodePosition(nodePosition)
+                pathFindingStateAction.setWallPosition(wallPosition)
             })
         }
 
-        if (value === 'check') {
+        if (value === 'check' && indexOfPattern(patternCurrent, nodePosition) === -1) {
             setMouseDownActive(true)
             addOrRemoveWall(positionX, positionY, true)
         }
@@ -336,17 +258,57 @@ const BoardComponent = (props) => {
 
     const addOrRemoveWall = (positionX, positionY, forceActive = false) => {
         const { gameBusinessAction } = props
+        const patternCurrent = {x: positionX, y: positionY}
         if ((mouseDownActive || forceActive) && !props.startGame) {
-            if (!isEqualPattern(snakePosition[0], {x: positionX, y: positionY}) && !isEqualPattern(foodPosition, {x: positionX, y: positionY})) {
+                if (!isEqualPattern(nodePosition[0], patternCurrent) && !isEqualPattern(targetPosition, patternCurrent)) {
                 switch(mouseDownType) {
-                    case GameEnums.DRAG_NODE:
-                        setSnakePosition([{x: positionX, y: positionY}])
+                    case DataEnums.DRAG_NODE:
+                        setNodePosition([patternCurrent])
                         break
-                    case GameEnums.SET_WALL:
-                        setWallPosition(gameBusinessAction.addOrRemoveData({x: positionX, y: positionY}, wallPosition))
+                    case DataEnums.DRAG_TARGET_AND_RENEW:
+                        switch(isSelectedAlgorithm && isSelectedAlgorithm.id) {
+                            case 1:
+                                const historyAreaSearch = getAreaBfs(last(nodePosition), patternCurrent, wallPosition, boardSize)
+                                const historyBfsStep = getBfsStep(historyAreaSearch.historyAreaSearch, patternCurrent)
+                                setAreaSearch(last(historyAreaSearch.historyAreaSearch))
+                                setNodePosition([...historyBfsStep, last(nodePosition)])
+                                setTargetPosition(patternCurrent)
+                                break;
+                            case 2:
+                                const { step } = getDfsStep(last(nodePosition), patternCurrent, wallPosition, boardSize)
+                                step.reverse()
+                                setAreaSearch(step)
+                                setNodePosition([...step, last(nodePosition)])
+                                setTargetPosition(patternCurrent)
+                                break;
+                            default:
+                                break
+                        }
                         break
-                    case GameEnums.DRAG_TARGET:
-                        setFoodPosition({x: positionX, y: positionY})
+                    case DataEnums.DRAG_TAIL:
+                        switch(isSelectedAlgorithm && isSelectedAlgorithm.id) {
+                            case 1:
+                                const historyAreaSearchAll = getAreaBfs(patternCurrent, targetPosition, wallPosition, boardSize)
+                                const { historyAreaSearch } = historyAreaSearchAll
+                                const historyBfsStep = getBfsStep(historyAreaSearch, targetPosition)
+                                setAreaSearch(last(historyAreaSearch))
+                                setNodePosition([...historyBfsStep, patternCurrent])
+                                break;
+                            case 2:
+                                const { step } = getDfsStep(patternCurrent, targetPosition, wallPosition, boardSize)
+                                step.reverse()
+                                setAreaSearch(step)
+                                setNodePosition([...step, patternCurrent])
+                                break;
+                            default:
+                                break
+                        }
+                        break
+                    case DataEnums.SET_WALL:
+                        setWallPosition(gameBusinessAction.addOrRemoveData(patternCurrent, wallPosition))
+                        break
+                    case DataEnums.DRAG_TARGET:
+                        setTargetPosition(patternCurrent)
                         break
                     default:
                         break
@@ -370,17 +332,17 @@ const BoardComponent = (props) => {
                             key={`board-item-${indexX}-${indexY}`} 
                             onMouseEnter={() => addOrRemoveWall(indexX, indexY)}
                             onMouseDown={(e) => setWallActive(e, 'check', indexX, indexY)}
-                            className={`board-item ${checkAreaSearch(indexX, indexY)} ${checkPositionSnake(indexX, indexY)}`}
+                            className={`board-item ${checkAreaSearch(indexX, indexY)} ${checkPositionNode(indexX, indexY)}`}
                         >   
                             <div className={`board-item unborder ${checkWallPosition(indexX, indexY)}`}>
-                                {/* {!isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && !isEqualPattern(last(snakePosition), {x: indexX, y: indexY}) && <React.Fragment>
+                                {/* {!isEqualPattern(nodePosition[0], {x: indexX, y: indexY}) && !isEqualPattern(last(nodePosition), {x: indexX, y: indexY}) && <React.Fragment>
                                 <div>x: {indexX}</div>
                                 <div>y: {indexY}</div>
                                 </React.Fragment>} */}
                                 
-                                {isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(snakePosition[1] || snakePosition[0], snakePosition[0])}deg)`}}/></div>}
-                                {snakePosition.length > 1 && isEqualPattern(last(snakePosition), {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon/></div>}
-                                {isEqualPattern(foodPosition, {x: indexX, y: indexY}) && !isEqualPattern(snakePosition[0], {x: indexX, y: indexY}) && <TargetItem/>}
+                                {isEqualPattern(nodePosition[0], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(nodePosition[1] || nodePosition[0], nodePosition[0])}deg)`}}/></div>}
+                                {nodePosition.length > 1 && isEqualPattern(last(nodePosition), {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(last(nodePosition), nodePosition[0])}deg)`}}/></div>}
+                                {isEqualPattern(targetPosition, {x: indexX, y: indexY}) && indexOfPattern(targetPosition, nodePosition) === -1 && <TargetItem/>}
                             </div>
                             
                             
