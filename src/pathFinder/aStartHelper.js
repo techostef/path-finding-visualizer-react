@@ -1,6 +1,4 @@
-import { dPattern, getMoveExceptExtend, indexOfPattern, patternToString, getPositionCost, trailingPattern, fillGapPatternDiagonal, getMoveExcept } from "../helpers/pathFindingHelper"
-import _ from "lodash"
-import { arrayFilterNotIncludeArray, arrayNotIncludeArray } from "../helpers/dataHelpers"
+import { dPattern, indexOfPattern, patternToString, getPositionCost, trailingPattern, getMoveExcept, arrayFilterNotIncludeArrayPattern } from "../helpers/pathFindingHelper"
 
 export const getTotalCost = (position = dPattern, areaSearch = []) => {
     let index = indexOfPattern(position, areaSearch)
@@ -28,13 +26,15 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
 
     const areaSearchStepRecursive = (data, deepLevel = 0) => {
         // if (deepLevel === 2) return
-        let areaSearchOriginal = data.areaSearch.length === 0 ? [startPosition] : [...data.areaSearch]
+        let areaSearchOriginal = data.areaSearch.length === 0 ? [startPosition] : data.areaSearch
         let areaSearchTemp = [...areaSearchOriginal]
         let nextSearch
         let currentPosition
         let visited = data.visited ? data.visited : []
         let newAreaSearch = []
         let notFoundTargetInAreaSearch = false
+        // let areaSearched = data.areaSearched ? data.areaSearched : []
+        let obstacle = [startPosition].concat(data.areaSearched).concat(wallPosition)
         for(let i = 0; i < areaSearchOriginal.length; i ++) {
             nextSearch = true
             currentPosition = patternToString(areaSearchOriginal[i])
@@ -55,45 +55,48 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
                     nextSearch.gCost = getPositionCost(targetPosition, nextSearch)
                     nextSearch.totalCost = nextSearch.gCost + nextSearch.hCost
                     areaSearchTemp.push(Object.assign({}, nextSearch))
-                    newAreaSearch.push(Object.assign({}, nextSearch))
+                    if (indexOfPattern(nextSearch, obstacle) === -1)
+                        newAreaSearch.push(Object.assign({}, nextSearch))
                 }
             }
         }
 
-        let areaSearched = data.areaSearched ? [...data.areaSearched] : []
-        let obstacle = [startPosition, ...areaSearched, ...wallPosition]
-        newAreaSearch = newAreaSearch.filter((item) => indexOfPattern(item, obstacle) === -1)
+        // let obstacle = [startPosition, ...areaSearched, ...wallPosition]
+        // newAreaSearch = newAreaSearch.filter((item) => indexOfPattern(item, obstacle) === -1)
         
-        areaSearched = [...areaSearched, ...newAreaSearch]
+        data.areaSearched = data.areaSearched.concat(newAreaSearch)
         
         if (newAreaSearch.length > 0) {
-            let minCost = newAreaSearch.reduce((prev, current) => ((prev.totalCost < current.totalCost && prev.gCost < current.gCost) ? prev : current)) 
+            let minCost = newAreaSearch.reduce((prev, current) => ((prev.totalCost < current.totalCost) ? prev : current)) 
             let arrayMinCost = newAreaSearch.filter((item) => item.totalCost === minCost.totalCost)
             if (arrayMinCost.length > 1) minCost = arrayMinCost.reduce((prev, current) => ((prev.gCost < current.gCost) ? prev : current))
             
+            if (!data.areaUnSearched) data.areaUnSearched = []
             if (!data.historyMinCost) data.historyMinCost = []
             if (!data.minCostGlobal) data.minCostGlobal = minCost
-            const limitArray = arrayFilterNotIncludeArray(areaSearched, data.historyMinCost)
-            let minCostInAreaSearch = limitArray.reduce((prev, current) => ((prev.totalCost < current.totalCost) ? prev : current)) 
-            if (minCost.totalCost > minCostInAreaSearch.totalCost) {
-                minCost = minCostInAreaSearch
+
+            if (data.areaUnSearched.length > 0) {
+                let minCostInAreaSearch = data.areaUnSearched.reduce((prev, current) => ((prev.totalCost < current.totalCost) ? prev : current)) 
+                if (minCost.totalCost > minCostInAreaSearch.totalCost) {
+                    minCost = minCostInAreaSearch
+                }
             }
             
+            
             data.areaSearch = [minCost]
-            data.areaSearched = [...areaSearched].map((item) => Object.assign({}, item))
             
             data.historyMinCost.push(minCost)
-
-            data.visited = [...visited].map((item) => Object.assign({}, item))
+            data.areaUnSearched = arrayFilterNotIncludeArrayPattern(data.areaSearched, data.historyMinCost)
+            data.visited = visited.map((item) => Object.assign({}, item))
             data.historyAreaSearch.push([...data.historyMinCost])
-            notFoundTargetInAreaSearch = indexOfPattern(targetPosition, areaSearched) === -1
+            notFoundTargetInAreaSearch = indexOfPattern(targetPosition, data.areaSearched) === -1
             if (notFoundTargetInAreaSearch) areaSearchStepRecursive(data, deepLevel + 1)
         } else {
-            const limitArrayOther = arrayFilterNotIncludeArray(areaSearched, data.historyMinCost)
-            if (limitArrayOther.length > 0) {
-                data.areaSearch = [limitArrayOther[0]]
-                data.historyMinCost.push(limitArrayOther[0])
-                notFoundTargetInAreaSearch = indexOfPattern(targetPosition, areaSearched) === -1
+            if (data.areaUnSearched.length > 0) {
+                const target = data.areaUnSearched.shift()
+                data.areaSearch = [target]
+                data.historyMinCost.push(target)
+                notFoundTargetInAreaSearch = indexOfPattern(targetPosition, data.areaSearched) === -1
                 if (notFoundTargetInAreaSearch) areaSearchStepRecursive(data, deepLevel + 1)
             }
         }

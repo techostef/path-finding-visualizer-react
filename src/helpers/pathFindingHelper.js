@@ -736,3 +736,7 @@ export const isFarFromTarget = (targetPosition, position) => {
         return true
     return false
 }
+
+export const arrayFilterNotIncludeArrayPattern = (arrayTarget = [], arrayExclude = []) => {
+    return arrayTarget.filter((item) => arrayExclude.findIndex((itemHistory) => isEqualPattern(itemHistory, item)) === -1)
+}
