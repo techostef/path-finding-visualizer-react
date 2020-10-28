@@ -1,20 +1,23 @@
 import { checkEatBody } from "./pathFindingHelper"
 
 export const runningProcessStep = (
-    data = {}, 
     dataNode = [], 
     log = () => {}, 
     onDone = () => {},
     setDefault = () => {}, 
-    step = [], 
-    setDataNode = () => {},
+    stepInterval = [], 
+    setDataNode = (newData, oldData) => {},
     setNodePosition = () => {},
     timerInterval = 300, 
 ) => {
     let interval 
     interval = setInterval(() => {
-        const [ movingNext ] = step
-        step.shift()
+        if (!stepInterval || stepInterval.length === 0) {
+            clearInterval(interval)
+            return
+        }
+        const [ movingNext ] = stepInterval
+        stepInterval.shift()
         if (movingNext) {
             dataNode = setDataNode(movingNext, dataNode)
             setNodePosition([...dataNode])
@@ -24,7 +27,7 @@ export const runningProcessStep = (
             }
         }
 
-        if (step.length === 0) {
+        if (stepInterval.length === 0) {
             clearInterval(interval)
             setDefault()
             onDone()

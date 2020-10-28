@@ -1,5 +1,3 @@
-import _ from "lodash"
-import { isEqualPattern } from "./pathFindingHelper"
 export const range = (start = 0, end = 0, increment = 1) => {
     let array = []
     if (!end) {

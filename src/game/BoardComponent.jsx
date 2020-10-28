@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { last, range } from "../helpers/dataHelpers"
-import { generateGrid, dPattern, generateTargetPosition, indexOfPattern, isEqualPattern, getRotate, trailingPattern, getPositionCost } from "../helpers/pathFindingHelper"
+import { generateGrid, dPattern, generateTargetPosition, indexOfPattern, isEqualPattern, getRotate, trailingPattern, dFunc } from "../helpers/pathFindingHelper"
 import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import * as appStateAction from "../stores/actions/appStateAction"
 import * as gameBusinessAction from "../stores/actions/business/pathFindingBusinessAction"
@@ -12,12 +12,12 @@ import DataEnums from "../enums/pathFindingEnums"
 import { runningProcessStep } from "../helpers/intervalHelpers"
 import TargetItem from "./TargetItem"
 import { getAreaBfs, getBfsStep } from "../pathFinder/bfsHelper"
-import { getDfsStep } from "../pathFinder/dfsHelper"
+import { getDFSStep, getDfsStep } from "../pathFinder/dfsHelper"
 import { getAreaAStart, getAStartStep, getTotalCost } from "../pathFinder/aStartHelper"
 
 const mapStateToProps = (state) => {
     return {
-        algorithm: state.pathFindingState.algorithm,
+        algorithmState: state.algorithmState,
         areaSearch: state.pathFindingState.areaSearch,
         boardSize: state.pathFindingState.boardSize,
         targetPosition: state.pathFindingState.targetPosition,
@@ -26,6 +26,7 @@ const mapStateToProps = (state) => {
         startGame: state.appState.startGame,
         timerInterval: state.pathFindingState.timerInterval,
         wallPosition: state.pathFindingState.wallPosition,
+        wallPositionTemplateState: state.wallPositionTemplateState,
         visualizeFinding: state.pathFindingState.visualizeFinding,
     }
 }
@@ -39,7 +40,8 @@ const mapDispatchToProps = (dispatch) => {
 }
 
 const BoardComponent = (props) => {
-    const isSelectedAlgorithm = props.algorithm.find((item) => item.isSelected)
+    const isSelectedAlgorithm = props.algorithmState.find((item) => item.isSelected)
+    const isSelectedWallPositionTemplate = props.wallPositionTemplateState.find((item) => item.isSelected)
 
     const [boardSize, setBoardSize] = useState(props.boardSize)
     const timerInterval = props.timerInterval
@@ -138,6 +140,20 @@ const BoardComponent = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.nodePosition])
 
+    useEffect(() => {
+        if (!props.startGame) {
+            setNodePosition(props.nodePosition)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.areaSearch])
+
+    useEffect(() => {
+        if (!props.startGame && isSelectedWallPositionTemplate && isSelectedWallPositionTemplate.wallPosition) {
+            const { wallPosition } = isSelectedWallPositionTemplate
+            runningProcessStep([], dFunc, dFunc, dFunc, [...wallPosition], (newData, oldData) => { return [...oldData, newData] }, setWallPosition, 10)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSelectedWallPositionTemplate && isSelectedWallPositionTemplate.id])
 
     const checkPositionNode = ( positionX = 0, positionY = 0, result = 'active') => {
         if (nodePositionForRender.length === 0) return false
@@ -186,7 +202,7 @@ const BoardComponent = (props) => {
                 const lastHistory = last(data.historyAreaSearch)
                 const isTargetInsideAreaSearch = indexOfPattern(props.targetPosition, lastHistory) >= 0
                 if (isTargetInsideAreaSearch) {
-                    const allStep = getAStartStep(lastHistory, start)
+                    const allStep = getAStartStep(lastHistory, wallPosition, start)
                     let step = [start]
                     interval = setInterval((item) => {
                         const nextMove = allStep.pop()
@@ -247,18 +263,15 @@ const BoardComponent = (props) => {
         let nodePositionOriginal = dataParams.nodePosition.map((item) => Object.assign({}, item))
     
         // ----------------------------------------------------
+        const [ headNode ] = nodePosition
+        const { historyAllStep: allStep, step} = getDfsStep(headNode, targetPosition, wallPosition, boardSize)
 
-        const { historyAllStep: allStep, step} = getDfsStep(dataParams.nodePosition[0], targetPosition, wallPosition, boardSize)
-
-        const { appStateAction } = props
         const log = () => {}
-
         const onDone = () => {
-            appStateAction.setStartGame(false)
-            runningProcessStep(dataParams, [nodePosition[0]], log, () => {}, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setNodePosition, timerInterval)
+           
+            runningProcessStep([headNode], log, () => { props.appStateAction.setStartGame(false) }, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setNodePosition, timerInterval)
         }
-
-        runningProcessStep(dataParams, nodePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setAreaSearch, timerInterval)
+        runningProcessStep(nodePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setAreaSearch, timerInterval)
     }
 
     const setWallActive = (e, value, positionX, positionY) => {
@@ -280,8 +293,10 @@ const BoardComponent = (props) => {
         } else {
             setMouseDownType(DataEnums.SET_WALL)
         }
+
         if (!value) {
             batch(() => {
+                pathFindingStateAction.setAreaSearch(areaSearch)
                 pathFindingStateAction.setTargetPosition(targetPosition)
                 pathFindingStateAction.setNodePosition(nodePosition)
                 pathFindingStateAction.setWallPosition(wallPosition)
@@ -359,7 +374,7 @@ const BoardComponent = (props) => {
 
     return (
         <div 
-            className="board-component-container" 
+            className={`board-component-container`} 
             style={styleBoardContainer}
             onMouseDown={(e) => setWallActive(e, true)}
             onMouseUp={(e) => setWallActive(e, false)}
@@ -368,23 +383,26 @@ const BoardComponent = (props) => {
             {range(boardSize).map((indexY) => {
                 return range(boardSize).map((indexX) => {
                     const patternCurrent = {x: indexX, y: indexY}
+                    const [ headNode ] = nodePosition
                     return (
                         <div
                             key={`board-item-${indexX}-${indexY}`} 
                             onMouseEnter={() => addOrRemoveWall(indexX, indexY)}
                             onMouseDown={(e) => setWallActive(e, 'check', indexX, indexY)}
-                            className={`board-item ${checkAreaSearch(indexX, indexY)} ${checkPositionNode(indexX, indexY)}`}
+                            className={`board-item ${props.startGame ? 'animated' : ''} ${checkAreaSearch(indexX, indexY)} ${checkPositionNode(indexX, indexY)}`}
                         >   
                             <div className={`board-item unborder ${checkWallPosition(indexX, indexY)}`}>
-                                {/* {!isEqualPattern(nodePosition[0], {x: indexX, y: indexY}) && !isEqualPattern(last(nodePosition), {x: indexX, y: indexY}) && <React.Fragment>
-                                <div>x: {indexX}</div>
-                                <div>y: {indexY}</div>
-                                </React.Fragment>} */}
-                                {/* <div style={{position: "absolute"}}>
+                                {/* {!isEqualPattern(headNode, {x: indexX, y: indexY}) && !isEqualPattern(last(nodePosition), {x: indexX, y: indexY}) && (
+                                    <div style={{position: "absolute"}}>
+                                        <div>x: {indexX}</div>
+                                        <div>y: {indexY}</div>
+                                    </div>
+                                )}
+                                <div style={{position: "absolute"}}>
                                     {getTotalCost(patternCurrent, areaSearch)}
                                 </div> */}
-                                {isEqualPattern(nodePosition[0], patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(nodePosition[1] || nodePosition[0], nodePosition[0])}deg)`}}/></div>}
-                                {nodePosition.length > 1 && isEqualPattern(last(nodePosition), patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(last(nodePosition), nodePosition[0])}deg)`}}/></div>}
+                                {isEqualPattern(headNode, patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(nodePosition[1] || headNode, headNode)}deg)`}}/></div>}
+                                {nodePosition.length > 1 && isEqualPattern(last(nodePosition), patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(last(nodePosition), headNode)}deg)`}}/></div>}
                                 {isEqualPattern(targetPosition, patternCurrent) && indexOfPattern(targetPosition, nodePosition) === -1 && <TargetItem/>}
                             </div>
                         </div>

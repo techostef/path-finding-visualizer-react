@@ -17,7 +17,7 @@ export const restartGame = () => {
     }
 }
 
-export const addOrRemoveData = (pattern = dPattern, data) => {
+export const addOrRemoveData = (pattern = dPattern, data = []) => {
     return (dispatch, getState) => {
         const newData = [...data]
         const indexFind = newData.findIndex((item) => isEqualPattern(pattern, item))
@@ -30,30 +30,11 @@ export const addOrRemoveData = (pattern = dPattern, data) => {
     }
 }
 
-export const addOrRemoveWall = (positionX, positionY) => {
+export const addOrRemoveWall = (positionX = 0, positionY = 0) => {
     return (dispatch, getState) => {
         const state = getState()
         const { pathFindingState } = state
         const pattern = {x: positionX, y: positionY}
         dispatch(pathFindingStateAction.setWallPosition(dispatch(addOrRemoveData(pattern, pathFindingState.wallPosition))))
-    }
-}
-
-export const handleIsSelectedAll = (isSelected) => {
-    return (dispatch, getState) => {
-        const state = getState()
-        const { pathFindingState } = state
-        const newData = [...pathFindingState.algorithm].map((item) => {
-            item.isSelected = false
-            return item
-        })
-        dispatch(pathFindingStateAction.restoreAlgorithm(newData))
-    }
-}
-
-export const handleIsSelected = (id, isSelected) => {
-    return (dispatch, getState) => {
-        dispatch(handleIsSelectedAll(false))
-        dispatch(pathFindingStateAction.setIsSelectedAlgorithm(id, isSelected))
     }
 }

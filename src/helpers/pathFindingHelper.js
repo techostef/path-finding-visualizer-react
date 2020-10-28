@@ -2,7 +2,7 @@ import { arrayToString, last, range } from "./dataHelpers"
 import DataEnums from "../enums/pathFindingEnums"
 
 export const dPattern = {x: 0, y: 0}
-const dFunc = () => {}
+export const dFunc = () => {}
 
 export const generateGrid = (boardSize = 0) => {
     return {
@@ -475,8 +475,10 @@ export const trailingPattern = (patternList = [], startPosition) => {
     let target = last(patternListTemp)
     let patternResult = [target]
     let targetList = []
+    let targetBlackList = []
     patternListTemp.pop()
     while (target) {
+      
         targetList = []
         // eslint-disable-next-line no-loop-func
         patternListTemp.forEach((item, i) => {
@@ -485,29 +487,32 @@ export const trailingPattern = (patternList = [], startPosition) => {
                     index: i 
                 }))
         })
+      
         if (targetList.length > 0) {
             
             if (targetList.length === 1) {
                 [ target ] = targetList
             } else {
-                target = targetList.reduce((prev, current) => ((prev.totalCost <= current.totalCost && prev.hCost <= current.hCost) ? prev : current)) 
+                target = arrayFilterNotIncludeArrayPattern(targetList, targetBlackList).reduce((prev, current) => ((prev.totalCost <= current.totalCost && prev.hCost <= current.hCost) ? prev : current)) 
             }
-          
-         
+
             patternListTemp.splice(target.index, 1)
             // eslint-disable-next-line no-loop-func
             if (patternResult.indexOf((item) => isEqualPattern(item, target)) === -1) {
                 patternResult.push(target)
             } 
-                
+           
             if (isNearTarget(startPosition, target)) break
         }
         else {
-            target = null
+            targetBlackList.push(target)
+            patternResult.pop()
+            target = last(patternResult)
+            continue
+            // target = null
         }
     }
     patternResult.push(startPosition)
-    // console.log("patternResult", [...patternResult])
     return patternResult
 }
 
@@ -716,10 +721,13 @@ export const isNearTarget = (targetPosition = dPattern, position = dPattern, ext
     const isNearX = (gapMove.x === 1 || gapMove.x === -1)
     const isNearNormal = (gapMove.x === 0 && isNearY) || (gapMove.y === 0 && isNearX)
     const isNearDiagonal = (gapMove.x === -1 && gapMove.y === 1) || (gapMove.x === 1 && gapMove.y === 1) || (gapMove.x === 1 && gapMove.y === -1) || (gapMove.x === -1 && gapMove.y === -1)
+
     if (extendDiagonal && (isNearNormal || isNearDiagonal)) 
         return true
-    else if (isNearNormal)
+    else if (isNearNormal) {
         return true
+    }
+        
     return false
 }
 
@@ -739,4 +747,12 @@ export const isFarFromTarget = (targetPosition, position) => {
 
 export const arrayFilterNotIncludeArrayPattern = (arrayTarget = [], arrayExclude = []) => {
     return arrayTarget.filter((item) => arrayExclude.findIndex((itemHistory) => isEqualPattern(itemHistory, item)) === -1)
+}
+
+export const getCostDetail = (startPosition, targetPosition, position) => {
+    const newPosition = {...position}
+    newPosition.hCost = getPositionCost(startPosition, newPosition)
+    newPosition.gCost = getPositionCost(targetPosition, newPosition)
+    newPosition.totalCost = newPosition.gCost + newPosition.hCost
+    return newPosition
 }

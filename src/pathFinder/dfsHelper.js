@@ -1,6 +1,12 @@
 import DataEnums from "../enums/pathFindingEnums"
-import { checkEatTarget, checkOutsideBoardSize, dfsStepNode, dPattern, gapPattern, indexOfPattern, patternToString } from "../helpers/pathFindingHelper"
+import { checkEatTarget, checkOutsideBoardSize, dfsStepNode, dPattern, gapPattern, getCostDetail, indexOfPattern, patternToString, trailingPattern } from "../helpers/pathFindingHelper"
 import { getAreaBfs } from "./bfsHelper"
+
+
+export const getDFSStep = (areaSearch = [], startPosition) => {
+    const step = trailingPattern(areaSearch, startPosition)
+    return step 
+}
 
 export const getDfsStep = (startPosition, targetPosition = dPattern, wallPosition = [], boardSize = 0) => {
     
@@ -41,7 +47,6 @@ export const getDfsStep = (startPosition, targetPosition = dPattern, wallPositio
         currentPosition = patternToString(headNode)
 
         nextStep = dfsStepNode(visited, currentPosition, targetPosition, [...wallPosition], targetPositionTemp.map((item) => Object.assign({}, item)), boardSize, prevStep, setVisited)
-        
         if (nextStep === DataEnums.CONTINUE) continue
 
         visited[currentPosition].push(Object.assign({}, nextStep))
@@ -53,6 +58,7 @@ export const getDfsStep = (startPosition, targetPosition = dPattern, wallPositio
             continue
         }
 
+        nextStep = getCostDetail(startPosition, targetPosition, nextStep)
         move = gapPattern(Object.assign({}, headNode), Object.assign({}, nextStep))
         moveAll.push(Object.assign({}, move))
         step.push(Object.assign({}, nextStep))

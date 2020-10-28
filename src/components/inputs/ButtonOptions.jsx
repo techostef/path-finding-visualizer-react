@@ -24,7 +24,7 @@ const ButtonOptions = (props) => {
     }
 
     return (
-        <div className="button-options">
+        <div className={`button-options ${props.className}`}>
             <div className="button-container"> 
                 <Button 
                     disabled={props.disabled}
@@ -57,6 +57,7 @@ const ButtonOptions = (props) => {
 }
 
 ButtonOptions.defaultProps = {
+    className: "",
     disabled: false,
     labelKey: 'name',
     onClick: () => {},
@@ -67,6 +68,7 @@ ButtonOptions.defaultProps = {
 }
 
 ButtonOptions.propTypes = {
+    className: PropTypes.string,
     disabled: PropTypes.bool,
     labelKey: PropTypes.string,
     onClick: PropTypes.func,

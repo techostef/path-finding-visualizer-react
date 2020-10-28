@@ -1,15 +1,6 @@
 import actionEnums from "../../enums/actionEnums"
 import { dPattern } from "../../helpers/pathFindingHelper"
 
-
-export const setIsSelectedAlgorithm = (id, isSelected) => ({
-    type: actionEnums.GAME_STATE_SET_ALGORITHM_IS_SELECTED, id, isSelected
-})
-
-export const restoreAlgorithm = (data = []) => ({
-    type: actionEnums.GAME_STATE_RESTORE_ALGORITHM, data
-})
-
 export const setAreaSearch = (areaSearch = []) => ({
     type: actionEnums.GAME_STATE_SET_AREA_SEARCH, areaSearch
 })

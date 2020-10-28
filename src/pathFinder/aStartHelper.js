@@ -1,4 +1,4 @@
-import { dPattern, indexOfPattern, patternToString, getPositionCost, trailingPattern, getMoveExcept, arrayFilterNotIncludeArrayPattern } from "../helpers/pathFindingHelper"
+import { dPattern, indexOfPattern, patternToString, trailingPattern, getMoveExcept, arrayFilterNotIncludeArrayPattern, getCostDetail, optimationStep } from "../helpers/pathFindingHelper"
 
 export const getTotalCost = (position = dPattern, areaSearch = []) => {
     let index = indexOfPattern(position, areaSearch)
@@ -12,9 +12,9 @@ export const getTotalCost = (position = dPattern, areaSearch = []) => {
     return null
 }
 
-export const getAStartStep = (areaSearch = [], startPosition) => {
+export const getAStartStep = (areaSearch = [], obstacle = [], startPosition = dPattern) => {
     const step = trailingPattern(areaSearch, startPosition)
-    return step 
+    return optimationStep(step, obstacle) 
 }
 
 export const getAreaAStart = (startPosition = dPattern, targetPosition = dPattern, wallPosition = [], boardSize = 0) => {
@@ -51,18 +51,13 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
                 visited[currentPosition].push(nextSearch)
                 const notFoundInAreaSearch = nextSearch && indexOfPattern(nextSearch, areaSearchTemp) === -1
                 if (notFoundInAreaSearch) {
-                    nextSearch.hCost = getPositionCost(startPosition, nextSearch)
-                    nextSearch.gCost = getPositionCost(targetPosition, nextSearch)
-                    nextSearch.totalCost = nextSearch.gCost + nextSearch.hCost
+                    nextSearch = getCostDetail(startPosition, targetPosition, nextSearch)
                     areaSearchTemp.push(Object.assign({}, nextSearch))
                     if (indexOfPattern(nextSearch, obstacle) === -1)
                         newAreaSearch.push(Object.assign({}, nextSearch))
                 }
             }
         }
-
-        // let obstacle = [startPosition, ...areaSearched, ...wallPosition]
-        // newAreaSearch = newAreaSearch.filter((item) => indexOfPattern(item, obstacle) === -1)
         
         data.areaSearched = data.areaSearched.concat(newAreaSearch)
         
@@ -81,7 +76,6 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
                     minCost = minCostInAreaSearch
                 }
             }
-            
             
             data.areaSearch = [minCost]
             
