@@ -476,7 +476,6 @@ export const trailingPattern = (patternList = [], startPosition) => {
     let patternResult = [target]
     let targetList = []
     patternListTemp.pop()
-    let index = 0
     while (target) {
         targetList = []
         // eslint-disable-next-line no-loop-func
@@ -493,16 +492,12 @@ export const trailingPattern = (patternList = [], startPosition) => {
             } else {
                 target = targetList.reduce((prev, current) => ((prev.totalCost <= current.totalCost && prev.hCost <= current.hCost) ? prev : current)) 
             }
-            if (index > 10) {
-                console.log("target", target, targetList)
-            }
-            // if (isEqualPattern({x: 12, y: 12}, target)) {
-            //     console.log("ada", targetList)
-            // }
+          
+         
             patternListTemp.splice(target.index, 1)
-            if (patternResult.indexOf((item) => _.isEqual(item, target)) === -1) {
+            // eslint-disable-next-line no-loop-func
+            if (patternResult.indexOf((item) => isEqualPattern(item, target)) === -1) {
                 patternResult.push(target)
-                
             } 
                 
             if (isNearTarget(startPosition, target)) break
@@ -510,7 +505,6 @@ export const trailingPattern = (patternList = [], startPosition) => {
         else {
             target = null
         }
-        index ++
     }
     patternResult.push(startPosition)
     // console.log("patternResult", [...patternResult])
