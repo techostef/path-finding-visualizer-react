@@ -85,15 +85,6 @@ const BoardComponent = (props) => {
                     break;
                 case 3:
                     obj = Object.assign(obj, getAreaAStart(headNode, targetPosition, wallPosition, boardSize))
-                    // const { historyAreaSearch, historyMinCost } = getAreaAStart(headNode, targetPosition, wallPosition, boardSize)
-                    // let interval = setInterval(() => {
-                    //     let item = historyAreaSearch.shift()
-                    //     setAreaSearch(item)
-                    //     if (historyAreaSearch.length === 0) {
-                    //         clearInterval(interval)
-                    //         setNodePosition(historyMinCost)
-                    //     }
-                    // }, timerInterval)
                     aStarStep(obj, headNode)
                     break;
                 default:
@@ -208,8 +199,8 @@ const BoardComponent = (props) => {
                         }
                     }, timerInterval)
                 } else {
-                    // setAreaSearch([])
-                    // appStateAction.setStartGame(false)
+                    setAreaSearch([])
+                    appStateAction.setStartGame(false)
                 }
                 return
             }
