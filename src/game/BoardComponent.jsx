@@ -150,6 +150,14 @@ const BoardComponent = (props) => {
     useEffect(() => {
         if (!props.startGame && isSelectedWallPositionTemplate && isSelectedWallPositionTemplate.wallPosition) {
             const { wallPosition } = isSelectedWallPositionTemplate
+            let indexNodePosition = wallPosition.findIndex((item) => isEqualPattern(item, nodePosition[0]))
+            if (indexNodePosition >= 0) {
+                wallPosition.splice(indexNodePosition, 1)
+            }
+            let indexTargetPosition = wallPosition.findIndex((item) => isEqualPattern(item, targetPosition))
+            if (indexTargetPosition >= 0) {
+                wallPosition.splice(indexTargetPosition, 1)
+            }
             runningProcessStep([], dFunc, dFunc, dFunc, [...wallPosition], (newData, oldData) => { return [...oldData, newData] }, setWallPosition, 10)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
