@@ -23,20 +23,23 @@ const ButtonOptions = (props) => {
         setOpenOptions(false)
     }
 
-    console.log("renderButtonOptions", props)
-
     return (
         <div className="button-options">
-            <Button 
-                disabled={props.disabled}
-                className="button-content" 
-                onClick={props.onClick}>
-                <div className="label">
-                    {value}
+            <div className="button-container"> 
+                <Button 
+                    disabled={props.disabled}
+                    className="button-content" 
+                    onClick={props.onClick}>
+                    <div className="label">
+                        {value}
+                    </div>
+                </Button>
+                <div className="icon-container">
+                    <RightArrowIcon onClick={() => setOpenOptions(!openOptions)}/>
+                    
                 </div>
-            </Button>
-            <div className="icon-container">
-                <RightArrowIcon onClick={() => setOpenOptions(!openOptions)}/>
+            </div>
+            <div className="container-items">
                 {openOptions && <div ref={optionRef} className="container-options">
                     {props.options.map((item, index) => 
                         <div 

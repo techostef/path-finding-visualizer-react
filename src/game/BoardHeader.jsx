@@ -72,8 +72,6 @@ const BoardHeader = (props) => {
         pathFindingStateAction.setOptimizePath(true)
     }
 
-    console.log("renderHeader", props)
-
     return (
         <div className="board-header">
             

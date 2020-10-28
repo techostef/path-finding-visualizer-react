@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { last, range } from "../helpers/dataHelpers"
-import { generateGrid, dPattern, generateTargetPosition, indexOfPattern, isEqualPattern, getRotate } from "../helpers/pathFindingHelper"
+import { generateGrid, dPattern, generateTargetPosition, indexOfPattern, isEqualPattern, getRotate, trailingPattern, getPositionCost } from "../helpers/pathFindingHelper"
 import { ReactComponent as StartNodeIcon } from "../images/startNode.svg"
 import * as appStateAction from "../stores/actions/appStateAction"
 import * as gameBusinessAction from "../stores/actions/business/pathFindingBusinessAction"
@@ -13,6 +13,7 @@ import { runningProcessStep } from "../helpers/intervalHelpers"
 import TargetItem from "./TargetItem"
 import { getAreaBfs, getBfsStep } from "../pathFinder/bfsHelper"
 import { getDfsStep } from "../pathFinder/dfsHelper"
+import { getAreaAStart, getAStartStep, getTotalCost } from "../pathFinder/aStartHelper"
 
 const mapStateToProps = (state) => {
     return {
@@ -23,6 +24,7 @@ const mapStateToProps = (state) => {
         nodePosition: state.pathFindingState.nodePosition,
         optimizePath: state.pathFindingState.optimizePath,
         startGame: state.appState.startGame,
+        timerInterval: state.pathFindingState.timerInterval,
         wallPosition: state.pathFindingState.wallPosition,
         visualizeFinding: state.pathFindingState.visualizeFinding,
     }
@@ -80,6 +82,19 @@ const BoardComponent = (props) => {
                 case 2:
                     obj = Object.assign(obj, getAreaBfs(headNode, targetPosition, wallPosition, boardSize))
                     dfsStep(obj, headNode)
+                    break;
+                case 3:
+                    obj = Object.assign(obj, getAreaAStart(headNode, targetPosition, wallPosition, boardSize))
+                    // const { historyAreaSearch, historyMinCost } = getAreaAStart(headNode, targetPosition, wallPosition, boardSize)
+                    // let interval = setInterval(() => {
+                    //     let item = historyAreaSearch.shift()
+                    //     setAreaSearch(item)
+                    //     if (historyAreaSearch.length === 0) {
+                    //         clearInterval(interval)
+                    //         setNodePosition(historyMinCost)
+                    //     }
+                    // }, timerInterval)
+                    aStarStep(obj, headNode)
                     break;
                 default:
                     setAreaSearch([])
@@ -168,6 +183,40 @@ const BoardComponent = (props) => {
         }
 
         return ""
+    }
+
+    const aStarStep = (data, start) => {
+        const { appStateAction, pathFindingStateAction } = props
+        let historyAreaSearch = [...data.historyAreaSearch]
+        data.areaSearch = last(historyAreaSearch)
+        let interval = setInterval(() => {
+            if(historyAreaSearch.length <= 0) {
+                clearInterval(interval)
+                const lastHistory = last(data.historyAreaSearch)
+                const isTargetInsideAreaSearch = indexOfPattern(props.targetPosition, lastHistory) >= 0
+                if (isTargetInsideAreaSearch) {
+                    const allStep = getAStartStep(lastHistory, start)
+                    let step = [start]
+                    interval = setInterval((item) => {
+                        const nextMove = allStep.pop()
+                        step = [nextMove, ...step]
+                        setNodePosition(step)
+                        if (allStep.length === 0) {
+                            clearInterval(interval)
+                            appStateAction.setStartGame(false)
+                            pathFindingStateAction.setNodePosition(step)
+                        }
+                    }, timerInterval)
+                } else {
+                    // setAreaSearch([])
+                    // appStateAction.setStartGame(false)
+                }
+                return
+            }
+            let [ areaNext ] = historyAreaSearch
+            historyAreaSearch.shift()
+            setAreaSearch(areaNext)
+        }, timerInterval)
     }
 
     const bfsStep = (data, start) => {
@@ -327,6 +376,7 @@ const BoardComponent = (props) => {
         >
             {range(boardSize).map((indexY) => {
                 return range(boardSize).map((indexX) => {
+                    const patternCurrent = {x: indexX, y: indexY}
                     return (
                         <div
                             key={`board-item-${indexX}-${indexY}`} 
@@ -339,13 +389,13 @@ const BoardComponent = (props) => {
                                 <div>x: {indexX}</div>
                                 <div>y: {indexY}</div>
                                 </React.Fragment>} */}
-                                
-                                {isEqualPattern(nodePosition[0], {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(nodePosition[1] || nodePosition[0], nodePosition[0])}deg)`}}/></div>}
-                                {nodePosition.length > 1 && isEqualPattern(last(nodePosition), {x: indexX, y: indexY}) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(last(nodePosition), nodePosition[0])}deg)`}}/></div>}
-                                {isEqualPattern(targetPosition, {x: indexX, y: indexY}) && indexOfPattern(targetPosition, nodePosition) === -1 && <TargetItem/>}
+                                {/* <div style={{position: "absolute"}}>
+                                    {getTotalCost(patternCurrent, areaSearch)}
+                                </div> */}
+                                {isEqualPattern(nodePosition[0], patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(nodePosition[1] || nodePosition[0], nodePosition[0])}deg)`}}/></div>}
+                                {nodePosition.length > 1 && isEqualPattern(last(nodePosition), patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(last(nodePosition), nodePosition[0])}deg)`}}/></div>}
+                                {isEqualPattern(targetPosition, patternCurrent) && indexOfPattern(targetPosition, nodePosition) === -1 && <TargetItem/>}
                             </div>
-                            
-                            
                         </div>
                     )
                 })

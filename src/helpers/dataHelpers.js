@@ -1,3 +1,4 @@
+import _ from "lodash"
 export const range = (start = 0, end = 0, increment = 1) => {
     let array = []
     if (!end) {
@@ -30,4 +31,9 @@ export const arrayToString = (array = []) => {
     let result = ""
     array.forEach((item) => result += item)
     return result
+}
+
+
+export const arrayFilterNotIncludeArray = (arrayTarget = [], arrayExclude = []) => {
+    return arrayTarget.filter((item) => arrayExclude.findIndex((itemHistory) => _.isEqual(itemHistory, item)) === -1)
 }

@@ -1,4 +1,4 @@
-import { arrayToString, range } from "./dataHelpers"
+import { arrayToString, last, range } from "./dataHelpers"
 import DataEnums from "../enums/pathFindingEnums"
 
 export const dPattern = {x: 0, y: 0}
@@ -25,6 +25,24 @@ export const gapPattern = (position1 = dPattern, position2 = dPattern) => {
         x: position2.x - position1.x,
         y: position2.y - position1.y,
     }
+}
+
+export const totalPattern = (position1 = dPattern) => {
+    return position1.x + position1.y
+}
+
+export const getPositionCost = (position1, position2) => {
+    const getGap = gapPattern(position1, position2)
+    getGap.x = Math.abs(getGap.x)
+    getGap.y = Math.abs(getGap.y)
+    if (getGap.x > getGap.y) {
+        getGap.x *= 10
+        getGap.y *= 4
+    } else {
+        getGap.y *= 10
+        getGap.x *= 4
+    }
+    return totalPattern(getGap)
 }
 
 export const plusPattern = (position1 = dPattern, position2 = dPattern) => {
@@ -273,6 +291,44 @@ export const getMoveExcept = (visitedPosition = [], headNode = dPattern, boardSi
     return null 
 }
 
+export const getMoveExceptExtend = (visitedPosition = [], headNode = dPattern, boardSize) => {
+    let { x: headNodeX, y: headNodeY } = headNode
+    let headNodeTemp = {x: headNodeX, y: headNodeY}
+    let except = false
+    let index 
+    if (checkOutsideBoardSize(headNode, boardSize))
+        return null
+    for(let i = 0; i < 8; i++) {
+        if (i === 0)
+            headNodeTemp = {x: headNodeX + 1, y: headNodeY}
+        else if (i === 1)
+            headNodeTemp = {x: headNodeX - 1, y: headNodeY}
+        else if (i === 2)
+            headNodeTemp = {x: headNodeX, y: headNodeY + 1}
+        else if (i === 3)
+            headNodeTemp = {x: headNodeX, y: headNodeY - 1}
+        else if (i === 4)
+            headNodeTemp = {x: headNodeX - 1, y: headNodeY - 1}
+        else if (i === 5)
+            headNodeTemp = {x: headNodeX - 1, y: headNodeY + 1}
+        else if (i === 6)
+            headNodeTemp = {x: headNodeX + 1, y: headNodeY + 1}
+        else if (i === 7)
+            headNodeTemp = {x: headNodeX + 1, y: headNodeY - 1}
+        if (!checkOutsideBoardSize(headNodeTemp, boardSize)) 
+        // eslint-disable-next-line no-loop-func
+            index = visitedPosition.findIndex((item) => isEqualPattern(item, headNodeTemp))
+        else 
+            index = 0
+        if (index === -1) {
+            except = true
+            break
+        }
+    }
+    if (except) return headNodeTemp
+    return null 
+}
+
 export const checkOutsideBoardSize = (position = dPattern, boardSize) => {
     boardSize -= 1
     return (position.x > boardSize) || (position.y > boardSize) || (position.x < 0) || (position.y < 0)
@@ -414,6 +470,53 @@ export const dfsStepNode = (visited, currentPosition, targetPosition, wallPositi
     return nextStep
 }
 
+export const trailingPattern = (patternList = [], startPosition) => {
+    let patternListTemp = [...patternList]
+    let target = last(patternListTemp)
+    let patternResult = [target]
+    let targetList = []
+    patternListTemp.pop()
+    let index = 0
+    while (target) {
+        targetList = []
+        // eslint-disable-next-line no-loop-func
+        patternListTemp.forEach((item, i) => {
+            if (isNearTarget(target, item)) 
+                targetList.push(Object.assign({}, item, { 
+                    index: i 
+                }))
+        })
+        if (targetList.length > 0) {
+            
+            if (targetList.length === 1) {
+                [ target ] = targetList
+            } else {
+                target = targetList.reduce((prev, current) => ((prev.totalCost <= current.totalCost && prev.hCost <= current.hCost) ? prev : current)) 
+            }
+            if (index > 10) {
+                console.log("target", target, targetList)
+            }
+            // if (isEqualPattern({x: 12, y: 12}, target)) {
+            //     console.log("ada", targetList)
+            // }
+            patternListTemp.splice(target.index, 1)
+            if (patternResult.indexOf((item) => _.isEqual(item, target)) === -1) {
+                patternResult.push(target)
+                
+            } 
+                
+            if (isNearTarget(startPosition, target)) break
+        }
+        else {
+            target = null
+        }
+        index ++
+    }
+    patternResult.push(startPosition)
+    // console.log("patternResult", [...patternResult])
+    return patternResult
+}
+
 export const cleanPattern = (patternList = []) => {
     let patternListTemp = [...patternList]
     patternList.forEach((item, index) => {
@@ -425,6 +528,25 @@ export const cleanPattern = (patternList = []) => {
             }
         }
     }) 
+    return patternListTemp
+}
+
+export const fillGapPatternDiagonal = (patternList = []) => {
+    let patternListTemp = [...patternList]
+    let index = 0
+    while(patternListTemp[index]) {
+        const isPatternDiagonal = patternListTemp[index] && patternListTemp[index + 1] && !isNearTarget(patternListTemp[index], patternListTemp[index + 1])
+        if (isPatternDiagonal) {
+            let gapMove = gapPattern(patternListTemp[index], patternListTemp[index + 1])
+            gapMove.y = 0
+            const newPattern = Object.assign({}, patternListTemp[index], {
+                x: patternListTemp[index].x + gapMove.x
+            })
+            patternListTemp.splice(index, 0, newPattern)
+            index += 2 
+        }
+        index ++
+    }
     return patternListTemp
 }
 
@@ -594,11 +716,24 @@ export const getRotate = (pattern1 = dPattern, pattern2 = dPattern) => {
 }
 
 
-export const isNearTarget = (targetPosition, position) => {
+export const isNearTarget = (targetPosition = dPattern, position = dPattern, extendDiagonal = false) => {
     const gapMove = gapPattern(position, targetPosition)
-    if ((gapMove.x === 0 && (gapMove.y === 1 || gapMove.y === -1)) || (gapMove.y === 0 && (gapMove.x === 1 || gapMove.x === -1)))
+    const isNearY = (gapMove.y === 1 || gapMove.y === -1)
+    const isNearX = (gapMove.x === 1 || gapMove.x === -1)
+    const isNearNormal = (gapMove.x === 0 && isNearY) || (gapMove.y === 0 && isNearX)
+    const isNearDiagonal = (gapMove.x === -1 && gapMove.y === 1) || (gapMove.x === 1 && gapMove.y === 1) || (gapMove.x === 1 && gapMove.y === -1) || (gapMove.x === -1 && gapMove.y === -1)
+    if (extendDiagonal && (isNearNormal || isNearDiagonal)) 
+        return true
+    else if (isNearNormal)
         return true
     return false
+}
+
+export const getNearTargetIndex = (targetPosition = dPattern, patternList = []) => {
+    let findItem = patternList.find((item) => isNearTarget(item, targetPosition))
+    if (findItem >= 0)
+        return findItem
+    return -1
 }
 
 export const isFarFromTarget = (targetPosition, position) => {
