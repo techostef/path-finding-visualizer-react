@@ -331,17 +331,24 @@ const BoardComponent = (props) => {
                     case DataEnums.DRAG_TARGET_AND_RENEW:
                         switch(isSelectedAlgorithm && isSelectedAlgorithm.id) {
                             case 1:
-                                const historyAreaSearch = getAreaBfs(last(nodePosition), patternCurrent, wallPosition, boardSize)
-                                const historyBfsStep = getBfsStep(historyAreaSearch.historyAreaSearch, patternCurrent)
-                                setAreaSearch(last(historyAreaSearch.historyAreaSearch))
+                                const { historyAreaSearch: historyAreaSearchBfs } = getAreaBfs(last(nodePosition), patternCurrent, wallPosition, boardSize)
+                                const historyBfsStep = getBfsStep(historyAreaSearchBfs, patternCurrent)
+                                setAreaSearch(last(historyAreaSearchBfs))
                                 setNodePosition([...historyBfsStep, last(nodePosition)])
                                 setTargetPosition(patternCurrent)
                                 break;
                             case 2:
-                                const { step } = getDfsStep(last(nodePosition), patternCurrent, wallPosition, boardSize)
-                                step.reverse()
-                                setAreaSearch(step)
-                                setNodePosition([...step, last(nodePosition)])
+                                const { step: stepDfs } = getDfsStep(last(nodePosition), patternCurrent, wallPosition, boardSize)
+                                stepDfs.reverse()
+                                setAreaSearch(stepDfs)
+                                setNodePosition([...stepDfs, last(nodePosition)])
+                                setTargetPosition(patternCurrent)
+                                break;
+                            case 3:
+                                const { historyAreaSearch: historyAreaSearchAStart } = getAreaAStart(last(nodePosition), patternCurrent, wallPosition, boardSize)
+                                const historyAStartStep = getAStartStep(last(historyAreaSearchAStart), wallPosition, last(nodePosition))
+                                setAreaSearch(last(historyAreaSearchAStart))
+                                setNodePosition([patternCurrent, ...historyAStartStep])
                                 setTargetPosition(patternCurrent)
                                 break;
                             default:
@@ -351,17 +358,22 @@ const BoardComponent = (props) => {
                     case DataEnums.DRAG_TAIL:
                         switch(isSelectedAlgorithm && isSelectedAlgorithm.id) {
                             case 1:
-                                const historyAreaSearchAll = getAreaBfs(patternCurrent, targetPosition, wallPosition, boardSize)
-                                const { historyAreaSearch } = historyAreaSearchAll
-                                const historyBfsStep = getBfsStep(historyAreaSearch, targetPosition)
-                                setAreaSearch(last(historyAreaSearch))
+                                const { historyAreaSearch: historyAreaSearchBfs } = getAreaBfs(patternCurrent, targetPosition, wallPosition, boardSize)
+                                const historyBfsStep = getBfsStep(historyAreaSearchBfs, targetPosition)
+                                setAreaSearch(last(historyAreaSearchBfs))
                                 setNodePosition([...historyBfsStep, patternCurrent])
                                 break;
                             case 2:
-                                const { step } = getDfsStep(patternCurrent, targetPosition, wallPosition, boardSize)
-                                step.reverse()
-                                setAreaSearch(step)
-                                setNodePosition([...step, patternCurrent])
+                                const { step: stepDfs } = getDfsStep(patternCurrent, targetPosition, wallPosition, boardSize)
+                                stepDfs.reverse()
+                                setAreaSearch(stepDfs)
+                                setNodePosition([...stepDfs, patternCurrent])
+                                break;
+                            case 3:
+                                const { historyAreaSearch: historyAreaSearchAStart } = getAreaAStart(patternCurrent, targetPosition, wallPosition, boardSize)
+                                const historyAStartStep = getAStartStep(last(historyAreaSearchAStart), wallPosition, patternCurrent)
+                                setAreaSearch(last(historyAreaSearchAStart))
+                                setNodePosition([...historyAStartStep, patternCurrent])
                                 break;
                             default:
                                 break
