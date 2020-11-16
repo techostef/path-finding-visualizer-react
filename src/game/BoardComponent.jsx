@@ -12,8 +12,8 @@ import DataEnums from "../enums/pathFindingEnums"
 import { runningProcessStep } from "../helpers/intervalHelpers"
 import TargetItem from "./TargetItem"
 import { getAreaBfs, getBfsStep } from "../pathFinder/bfsHelper"
-import { getDfsStep } from "../pathFinder/dfsHelper"
-import { getAreaAStart, getAStartStep, getTotalCost } from "../pathFinder/aStartHelper"
+import { getAreaDfs, getDfsStep } from "../pathFinder/dfsHelper"
+import { getAreaAStart, getAStartStep } from "../pathFinder/aStartHelper"
 
 const mapStateToProps = (state) => {
     return {
@@ -82,10 +82,11 @@ const BoardComponent = (props) => {
                     bfsStep(obj, headNode)
                     break;
                 case 2:
-                    obj = Object.assign(obj, getAreaBfs(headNode, targetPosition, wallPosition, boardSize))
+                    obj = Object.assign(obj, getAreaDfs(headNode, targetPosition, wallPosition, boardSize))
                     dfsStep(obj, headNode)
                     break;
                 case 3:
+                    console.log("dfs start")
                     obj = Object.assign(obj, getAreaAStart(headNode, targetPosition, wallPosition, boardSize))
                     aStarStep(obj, headNode)
                     break;
@@ -267,15 +268,19 @@ const BoardComponent = (props) => {
 
     const dfsStep = (dataParams, start = dPattern) => {
         let nodePositionOriginal = dataParams.nodePosition.map((item) => Object.assign({}, item))
-    
+        const { appStateAction } = props
         // ----------------------------------------------------
         const [ headNode ] = nodePosition
-        const { historyAllStep: allStep, step} = getDfsStep(headNode, targetPosition, wallPosition, boardSize)
+        const { historyAllStep: allStep, step} = dataParams
 
         const log = () => {}
         const onDone = () => {
-           
-            runningProcessStep([headNode], log, () => { props.appStateAction.setStartGame(false) }, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setNodePosition, timerInterval)
+            console.log("indexOfPattern(targetPosition, step)", indexOfPattern(targetPosition, step))
+            if (indexOfPattern(targetPosition, step) >= 0) {
+                runningProcessStep([headNode], log, () => { props.appStateAction.setStartGame(false) }, () => {}, step, (movingNext, data1) => { return [movingNext, ...data1] }, setNodePosition, timerInterval)
+            } else {
+                appStateAction.setStartGame(false)
+            }
         }
         runningProcessStep(nodePositionOriginal, log, onDone, () => {}, allStep, (movingNext) => { return movingNext }, setAreaSearch, timerInterval)
     }

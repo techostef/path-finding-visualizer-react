@@ -9,12 +9,12 @@ const init = [
   {
     id: 2,
     label: "Deep First Search",
-    isSelected: false,
+    isSelected: true,
   },
   {
     id: 3,
     label: "A* Search",
-    isSelected: true,
+    isSelected: false,
   },
 ]
 
