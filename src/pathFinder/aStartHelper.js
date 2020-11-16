@@ -27,6 +27,7 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
     const areaSearchStepRecursive = (data, deepLevel = 0) => {
         // if (deepLevel === 2) return
         let areaSearchOriginal = data.areaSearch.length === 0 ? [startPosition] : data.areaSearch
+        let [ firstAreaSearch ] = areaSearchOriginal
         let areaSearchTemp = [...areaSearchOriginal]
         let nextSearch
         let currentPosition
@@ -51,7 +52,7 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
                 visited[currentPosition].push(nextSearch)
                 const notFoundInAreaSearch = nextSearch && indexOfPattern(nextSearch, areaSearchTemp) === -1
                 if (notFoundInAreaSearch) {
-                    nextSearch = getCostDetail(startPosition, targetPosition, nextSearch)
+                    nextSearch = getCostDetail(startPosition, targetPosition, nextSearch, firstAreaSearch)
                     areaSearchTemp.push(Object.assign({}, nextSearch))
                     if (indexOfPattern(nextSearch, obstacle) === -1)
                         newAreaSearch.push(Object.assign({}, nextSearch))
@@ -96,5 +97,6 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
         }
     }
     areaSearchStepRecursive(newData)
+    // console.log("historyAreaSearch", newData.historyAreaSearch)
     return newData
 }

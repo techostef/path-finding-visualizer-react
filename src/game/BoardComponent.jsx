@@ -12,7 +12,7 @@ import DataEnums from "../enums/pathFindingEnums"
 import { runningProcessStep } from "../helpers/intervalHelpers"
 import TargetItem from "./TargetItem"
 import { getAreaBfs, getBfsStep } from "../pathFinder/bfsHelper"
-import { getDFSStep, getDfsStep } from "../pathFinder/dfsHelper"
+import { getDfsStep } from "../pathFinder/dfsHelper"
 import { getAreaAStart, getAStartStep, getTotalCost } from "../pathFinder/aStartHelper"
 
 const mapStateToProps = (state) => {
@@ -223,8 +223,8 @@ const BoardComponent = (props) => {
                         }
                     }, timerInterval)
                 } else {
-                    setAreaSearch([])
-                    appStateAction.setStartGame(false)
+                    // setAreaSearch([])
+                    // appStateAction.setStartGame(false)
                 }
                 return
             }
@@ -413,12 +413,12 @@ const BoardComponent = (props) => {
                         >   
                             <div className={`board-item unborder ${checkWallPosition(indexX, indexY)}`}>
                                 {/* {!isEqualPattern(headNode, {x: indexX, y: indexY}) && !isEqualPattern(last(nodePosition), {x: indexX, y: indexY}) && (
-                                    <div style={{position: "absolute"}}>
+                                    <div style={{position: "absolute"}} title={getTotalCost(patternCurrent, areaSearch)}>
                                         <div>x: {indexX}</div>
                                         <div>y: {indexY}</div>
                                     </div>
-                                )}
-                                <div style={{position: "absolute"}}>
+                                )} */}
+                                {/* <div style={{position: "absolute"}}>
                                     {getTotalCost(patternCurrent, areaSearch)}
                                 </div> */}
                                 {isEqualPattern(headNode, patternCurrent) && <div className="container-icon"><StartNodeIcon style={{transform: `rotate(${getRotate(nodePosition[1] || headNode, headNode)}deg)`}}/></div>}

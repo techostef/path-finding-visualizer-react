@@ -39,7 +39,6 @@ const BoardHeader = (props) => {
         const { appStateAction, startGame } = props
         appStateAction.setStartGame(!startGame)
     }
-    console.log("propsheader", props)
 
     const isSelectedAlgorithm = props.algorithmState.find((item) => item.isSelected)
     const isSelectedWallPositionTemplate = props.wallPositionTemplateState.find((item) => item.isSelected)

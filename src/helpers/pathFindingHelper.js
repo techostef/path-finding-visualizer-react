@@ -749,10 +749,13 @@ export const arrayFilterNotIncludeArrayPattern = (arrayTarget = [], arrayExclude
     return arrayTarget.filter((item) => arrayExclude.findIndex((itemHistory) => isEqualPattern(itemHistory, item)) === -1)
 }
 
-export const getCostDetail = (startPosition, targetPosition, position) => {
+export const getCostDetail = (startPosition, targetPosition, position, nearPosition) => {
     const newPosition = {...position}
+    newPosition.sCost = (nearPosition && nearPosition.sCost) || 0
+    newPosition.sCost += 5
     newPosition.hCost = getPositionCost(startPosition, newPosition)
     newPosition.gCost = getPositionCost(targetPosition, newPosition)
-    newPosition.totalCost = newPosition.gCost + newPosition.hCost
+    newPosition.totalCost = newPosition.gCost + newPosition.hCost + newPosition.sCost
+    // newPosition.totalCost = newPosition.gCost + newPosition.hCost
     return newPosition
 }
