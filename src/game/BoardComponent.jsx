@@ -260,8 +260,7 @@ const BoardComponent = (props) => {
                 }
                 return
             }
-            let [ areaNext ] = historyAreaSearch
-            historyAreaSearch.shift()
+            const areaNext = historyAreaSearch.shift()
             setAreaSearch(areaNext)
         }, timerInterval)
     }
@@ -425,6 +424,20 @@ const BoardComponent = (props) => {
                                 {isEqualPattern(targetPosition, patternCurrent) && indexOfPattern(targetPosition, nodePosition) === -1 && <TargetItem/>}
                             </div>
                         </div>
+                        // <BoardComponentItem
+                        //     key={`board-component-item-${indexX}-${indexY}`}
+                        //     indexX={indexX}
+                        //     indexY={indexY}
+                        //     addOrRemoveWall={addOrRemoveWall}
+                        //     setWallActive={setWallActive}
+                        //     checkAreaSearch={checkAreaSearch}
+                        //     checkPositionNode={checkPositionNode}
+                        //     checkWallPosition={checkWallPosition}
+                        //     headNode={headNode}
+                        //     nodePosition={nodePosition}
+                        //     targetPosition={targetPosition}
+                        //     patternCurrent={patternCurrent}
+                        // />
                     )
                 })
             })}

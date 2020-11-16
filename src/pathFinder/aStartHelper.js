@@ -84,7 +84,7 @@ export const getAreaAStart = (startPosition = dPattern, targetPosition = dPatter
             data.areaUnSearched = arrayFilterNotIncludeArrayPattern(data.areaSearched, data.historyMinCost)
             data.visited = visited.map((item) => Object.assign({}, item))
             data.historyAreaSearch.push([...data.historyMinCost])
-            notFoundTargetInAreaSearch = indexOfPattern(targetPosition, data.areaSearched) === -1
+            notFoundTargetInAreaSearch = indexOfPattern(targetPosition, data.historyMinCost) === -1
             if (notFoundTargetInAreaSearch) areaSearchStepRecursive(data, deepLevel + 1)
         } else {
             if (data.areaUnSearched.length > 0) {
