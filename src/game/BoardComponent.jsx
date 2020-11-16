@@ -341,7 +341,7 @@ const BoardComponent = (props) => {
                                 setTargetPosition(patternCurrent)
                                 break;
                             case 2:
-                                const { step: stepDfs } = getDfsStep(last(nodePosition), patternCurrent, wallPosition, boardSize)
+                                const { step: stepDfs } = getAreaDfs(last(nodePosition), patternCurrent, wallPosition, boardSize)
                                 stepDfs.reverse()
                                 setAreaSearch(stepDfs)
                                 setNodePosition([...stepDfs, last(nodePosition)])
@@ -367,7 +367,7 @@ const BoardComponent = (props) => {
                                 setNodePosition([...historyBfsStep, patternCurrent])
                                 break;
                             case 2:
-                                const { step: stepDfs } = getDfsStep(patternCurrent, targetPosition, wallPosition, boardSize)
+                                const { step: stepDfs } = getAreaDfs(patternCurrent, targetPosition, wallPosition, boardSize)
                                 stepDfs.reverse()
                                 setAreaSearch(stepDfs)
                                 setNodePosition([...stepDfs, patternCurrent])
