@@ -223,13 +223,12 @@ const BoardComponent = (props) => {
                         }
                     }, timerInterval)
                 } else {
-                    // setAreaSearch([])
-                    // appStateAction.setStartGame(false)
+                    setAreaSearch([])
+                    appStateAction.setStartGame(false)
                 }
                 return
             }
-            let [ areaNext ] = historyAreaSearch
-            historyAreaSearch.shift()
+            const areaNext = historyAreaSearch.shift()
             setAreaSearch(areaNext)
         }, timerInterval)
     }
